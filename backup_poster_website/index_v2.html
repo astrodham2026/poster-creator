@@ -1802,17 +1802,29 @@
 
     // IndexedDB Setup for local asset storage to prevent QuotaExceededError
     const DB_NAME = 'PosterCreatorDB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2; // Bumped version to trigger schema update for templates store
     let db;
 
     function initDB() {
       return new Promise((resolve, reject) => {
+        // Set a 2-second timeout to prevent locking if another tab has the database open
+        const timeout = setTimeout(() => {
+          reject(new Error("IndexedDB initialization timed out"));
+        }, 2000);
+
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = (e) => reject(e.target.error);
+        
+        request.onerror = (e) => {
+          clearTimeout(timeout);
+          reject(e.target.error);
+        };
+        
         request.onsuccess = (e) => {
+          clearTimeout(timeout);
           db = e.target.result;
           resolve(db);
         };
+        
         request.onupgradeneeded = (e) => {
           const database = e.target.result;
           if (!database.objectStoreNames.contains('photos')) {
@@ -2070,12 +2082,8 @@
     // ----------------------------------------------------
     // INITIALIZATION & EVENT LISTENERS
     // ----------------------------------------------------
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        await initDB();
-      } catch (err) {
-        console.error("IndexedDB initialization failed, falling back to localStorage:", err);
-      }
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Initialize UI (Non-blocking so that UI functions work immediately even if DB is blocked)
       initTabs();
       initAccordion();
       initCanvasSettings();
@@ -2087,9 +2095,19 @@
       initSignaturePad();
       
       initAssetUploads();
-      await renderSavedTemplates();
       renderPresets();
-      await renderSavedPhotos();
+
+      // 2. Initialize database and load saved items asynchronously
+      initDB()
+        .then(async () => {
+          await renderSavedTemplates();
+          await renderSavedPhotos();
+        })
+        .catch(async (err) => {
+          console.error("IndexedDB initialization failed, falling back to localStorage:", err);
+          await renderSavedTemplates();
+          await renderSavedPhotos();
+        });
 
       // Clear active selection on viewport click
       viewport.addEventListener('mousedown', (e) => {
