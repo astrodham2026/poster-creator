@@ -2080,6 +2080,25 @@
       const activePage = getActivePage();
       document.getElementById('canvas-bgcolor').value = activePage.bgColor;
       document.getElementById('canvas-bgcolor-text').value = activePage.bgColor.toUpperCase();
+
+      // Sync Canvas Dimension Inputs in Sidebar so that controls match the loaded template size
+      const presetSelect = document.getElementById('canvas-preset');
+      const widthInput = document.getElementById('canvas-width');
+      const heightInput = document.getElementById('canvas-height');
+      const customSizeRow = document.getElementById('custom-size-row');
+
+      if (presetSelect && state.canvas.preset) {
+        presetSelect.value = state.canvas.preset;
+      }
+      if (widthInput && state.canvas.width) {
+        widthInput.value = state.canvas.width;
+      }
+      if (heightInput && state.canvas.height) {
+        heightInput.value = state.canvas.height;
+      }
+      if (customSizeRow) {
+        customSizeRow.style.display = state.canvas.preset === 'custom' ? 'flex' : 'none';
+      }
       
       resizeWorkspace();
       updatePreview();
