@@ -1637,6 +1637,11 @@
             <label>Saved Photos & Assets</label>
             <div class="assets-grid" id="saved-photos-grid"></div>
           </div>
+
+          <div class="control-group">
+            <label>Saved Fonts</label>
+            <div class="assets-grid" id="saved-fonts-grid"></div>
+          </div>
         </section>
         
         <!-- PANEL: THEME -->
@@ -1802,7 +1807,7 @@
 
     // IndexedDB Setup for local asset storage to prevent QuotaExceededError
     const DB_NAME = 'PosterCreatorDB';
-    const DB_VERSION = 2; // Bumped version to trigger schema update for templates store
+    const DB_VERSION = 3; // Bumped version to trigger schema update for fonts store
     let db;
 
     function initDB() {
@@ -1832,6 +1837,9 @@
           }
           if (!database.objectStoreNames.contains('templates')) {
             database.createObjectStore('templates', { keyPath: 'id' });
+          }
+          if (!database.objectStoreNames.contains('fonts')) {
+            database.createObjectStore('fonts', { keyPath: 'id' });
           }
         };
       });
@@ -2100,11 +2108,15 @@
       // 2. Initialize database and load saved items asynchronously
       initDB()
         .then(async () => {
+          await loadSavedFonts();
+          await renderSavedFonts();
           await renderSavedTemplates();
           await renderSavedPhotos();
         })
         .catch(async (err) => {
           console.error("IndexedDB initialization failed, falling back to localStorage:", err);
+          await loadSavedFonts();
+          await renderSavedFonts();
           await renderSavedTemplates();
           await renderSavedPhotos();
         });
@@ -4117,7 +4129,7 @@
       });
     }
 
-    function handleFontUpload(file) {
+    async function handleFontUpload(file) {
       if (!file) return;
       const fontName = file.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
       const reader = new FileReader();
@@ -4144,26 +4156,179 @@
           }
           
           const select = document.getElementById('text-font-family');
-          const opt = document.createElement('option');
-          opt.value = fontName;
-          opt.textContent = fontName + " (Uploaded)";
-          opt.style.fontFamily = `'${fontName}', sans-serif`;
-          select.appendChild(opt);
+          if (select && !select.querySelector(`option[value="${fontName}"]`)) {
+            const opt = document.createElement('option');
+            opt.value = fontName;
+            opt.textContent = fontName + " (Uploaded)";
+            opt.style.fontFamily = `'${fontName}', sans-serif`;
+            select.appendChild(opt);
+          }
           
-          select.value = fontName;
+          if (select) select.value = fontName;
           const activeObj = getActiveElement();
           const el = activeObj ? activeObj.el : null;
           if (el && el.type === 'text') {
             el.fontFamily = fontName;
             updatePreview();
           }
-          alert(`Font "${fontName}" loaded successfully!`);
+
+          // Save font automatically to IndexedDB
+          try {
+            await addToStore('fonts', { id: fontName, name: file.name, src: e.target.result });
+          } catch (dbErr) {
+            console.error("Failed to save font to IndexedDB, falling back to localStorage:", dbErr);
+            try {
+              let savedFonts = JSON.parse(localStorage.getItem('poster_saved_fonts')) || [];
+              savedFonts.push({ id: fontName, name: file.name, src: e.target.result });
+              localStorage.setItem('poster_saved_fonts', JSON.stringify(savedFonts));
+            } catch (lsErr) {
+              console.error("Failed to save font to localStorage:", lsErr);
+            }
+          }
+
+          await renderSavedFonts();
+          alert(`Font "${fontName}" loaded and saved successfully!`);
         } catch (err) {
           console.error("Font loading failure:", err);
           alert("Failed to load TTF font. Make sure the file format is correct.");
         }
       };
       reader.readAsDataURL(file);
+    }
+
+    async function loadSavedFonts() {
+      let savedFonts = [];
+      try {
+        savedFonts = await getAllFromStore('fonts');
+      } catch (e) {
+        console.error(e);
+        savedFonts = JSON.parse(localStorage.getItem('poster_saved_fonts')) || [];
+      }
+
+      for (const font of savedFonts) {
+        try {
+          const fontFace = new FontFace(font.id, `url(${font.src})`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+          
+          // Style tag for html-to-image compatibility
+          const styleId = `dynamic-font-${font.id}`;
+          if (!document.getElementById(styleId)) {
+            const styleEl = document.createElement('style');
+            styleEl.id = styleId;
+            styleEl.textContent = `
+              @font-face {
+                font-family: '${font.id}';
+                src: url(${font.src}) format('truetype');
+              }
+            `;
+            document.head.appendChild(styleEl);
+          }
+          
+          // Add to dropdown
+          const select = document.getElementById('text-font-family');
+          if (select && !select.querySelector(`option[value="${font.id}"]`)) {
+            const opt = document.createElement('option');
+            opt.value = font.id;
+            opt.textContent = font.id + " (Uploaded)";
+            opt.style.fontFamily = `'${font.id}', sans-serif`;
+            select.appendChild(opt);
+          }
+        } catch (err) {
+          console.error("Failed to load saved font:", font.id, err);
+        }
+      }
+    }
+
+    async function renderSavedFonts() {
+      const container = document.getElementById('saved-fonts-grid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let savedFonts = [];
+      try {
+        savedFonts = await getAllFromStore('fonts');
+      } catch (e) {
+        console.error(e);
+        savedFonts = JSON.parse(localStorage.getItem('poster_saved_fonts')) || [];
+      }
+
+      if (savedFonts.length === 0) {
+        container.innerHTML = '<div class="help-text" style="grid-column: 1/-1; text-align: center;">No uploaded fonts yet.</div>';
+        return;
+      }
+
+      savedFonts.forEach(font => {
+        const card = document.createElement('div');
+        card.className = 'asset-card';
+        card.innerHTML = `
+          <div style="font-family: '${font.id}', sans-serif; font-size: 24px; font-weight: bold; width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px;">
+            Aa
+          </div>
+          <span style="margin-top: 6px; display: block; font-size: 11px;" title="${font.name}">${font.id}</span>
+          <button class="btn-delete-asset" title="Delete Font">×</button>
+        `;
+        
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('btn-delete-asset')) {
+            e.stopPropagation();
+            deleteSavedFont(font.id);
+            return;
+          }
+          // Apply font to selected text element
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'text') {
+            el.fontFamily = font.id;
+            const select = document.getElementById('text-font-family');
+            if (select) select.value = font.id;
+            updatePreview();
+          }
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    async function deleteSavedFont(id) {
+      if (!confirm(`Are you sure you want to delete the font "${id}"?`)) return;
+      
+      try {
+        await deleteFromStore('fonts', id);
+      } catch (e) {
+        console.error(e);
+        let savedFonts = JSON.parse(localStorage.getItem('poster_saved_fonts')) || [];
+        savedFonts = savedFonts.filter(f => f.id !== id);
+        localStorage.setItem('poster_saved_fonts', JSON.stringify(savedFonts));
+      }
+
+      // Remove style tag
+      const styleId = `dynamic-font-${id}`;
+      const styleEl = document.getElementById(styleId);
+      if (styleEl) styleEl.remove();
+
+      // Remove from font family dropdown option
+      const select = document.getElementById('text-font-family');
+      if (select) {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) option.remove();
+        if (select.value === id) {
+          select.value = 'Montserrat';
+        }
+      }
+
+      // Scan pages and reset elements using this font to default 'Montserrat'
+      state.pages.forEach(page => {
+        page.elements.forEach(el => {
+          if (el.type === 'text' && el.fontFamily === id) {
+            el.fontFamily = 'Montserrat';
+          }
+        });
+      });
+
+      await renderSavedFonts();
+      updatePreview();
+      syncSidebarInputs();
     }
 
     function applyNeonStyle(color) {
