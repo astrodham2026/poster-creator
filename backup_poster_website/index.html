@@ -1296,7 +1296,7 @@
               <div class="control-group">
                 <label>Background Image Source</label>
                 <div class="upload-zone" id="bg-upload-zone">
-                  <input type="file" id="bg-upload-input" accept="image/*" style="display: none;">
+                  <input type="file" id="bg-upload-input" accept="image/*" style="display: none;" onclick="event.stopPropagation()">
                   <div class="upload-zone-content" id="bg-upload-content">
                     <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     <span>Click / Drag Image</span>
@@ -1346,7 +1346,7 @@
             <div class="accordion-content">
               <div id="logo-empty-state">
                 <button type="button" class="btn btn-secondary w-full" onclick="document.getElementById('logo-upload-input').click()">Upload Logo / Image</button>
-                <input type="file" id="logo-upload-input" accept="image/*" style="display: none;">
+                <input type="file" id="logo-upload-input" accept="image/*" style="display: none;" onclick="event.stopPropagation()">
                 <p class="help-text mt-3" style="text-align: center;">Or select an active photo element on the canvas to configure it.</p>
               </div>
               <div id="logo-controls-container" style="display: none;">
@@ -1615,7 +1615,7 @@
           <div class="control-group">
             <label>Upload Assets (Images, PDFs)</label>
             <div class="upload-zone" id="asset-upload-zone">
-              <input type="file" id="asset-upload-input" accept="image/*,application/pdf" style="display: none;">
+              <input type="file" id="asset-upload-input" accept="image/*,application/pdf" style="display: none;" onclick="event.stopPropagation()">
               <div class="upload-zone-content">
                 <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 <span>Upload JPEG, PNG, or PDF</span>
@@ -1690,7 +1690,7 @@
           <div class="control-group">
             <label>Upload Custom TTF Font Files</label>
             <div class="upload-zone" onclick="document.getElementById('font-upload-input').click()">
-              <input type="file" id="font-upload-input" accept=".ttf" style="display: none;">
+              <input type="file" id="font-upload-input" accept=".ttf" style="display: none;" onclick="event.stopPropagation()">
               <div class="upload-zone-content">
                 <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" fill="none"><path d="M4 7V4h16v3M9 20h6M12 4v16"></path></svg>
                 <span>Upload Custom .TTF Font</span>
@@ -1798,6 +1798,64 @@
     let pdfjsLib = window['pdfjs-dist/build/pdf'];
     if (pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // IndexedDB Setup for local asset storage to prevent QuotaExceededError
+    const DB_NAME = 'PosterCreatorDB';
+    const DB_VERSION = 1;
+    let db;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = (e) => reject(e.target.error);
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('photos')) {
+            database.createObjectStore('photos', { keyPath: 'id' });
+          }
+          if (!database.objectStoreNames.contains('templates')) {
+            database.createObjectStore('templates', { keyPath: 'id' });
+          }
+        };
+      });
+    }
+
+    function getAllFromStore(storeName) {
+      return new Promise((resolve, reject) => {
+        if (!db) return resolve([]);
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function addToStore(storeName, item) {
+      return new Promise((resolve, reject) => {
+        if (!db) return reject(new Error("Database not initialized"));
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.put(item);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function deleteFromStore(storeName, id) {
+      return new Promise((resolve, reject) => {
+        if (!db) return reject(new Error("Database not initialized"));
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
     }
 
     // Presetconfigurations
@@ -2012,7 +2070,12 @@
     // ----------------------------------------------------
     // INITIALIZATION & EVENT LISTENERS
     // ----------------------------------------------------
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await initDB();
+      } catch (err) {
+        console.error("IndexedDB initialization failed, falling back to localStorage:", err);
+      }
       initTabs();
       initAccordion();
       initCanvasSettings();
@@ -2024,9 +2087,9 @@
       initSignaturePad();
       
       initAssetUploads();
-      renderSavedTemplates();
+      await renderSavedTemplates();
       renderPresets();
-      renderSavedPhotos();
+      await renderSavedPhotos();
 
       // Clear active selection on viewport click
       viewport.addEventListener('mousedown', (e) => {
@@ -3604,7 +3667,14 @@
       const zone = document.getElementById('asset-upload-zone');
       const input = document.getElementById('asset-upload-input');
 
-      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('click', (e) => {
+        if (e.target === input) return;
+        input.click();
+      });
+
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
 
       zone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -3674,23 +3744,40 @@
       }
     }
 
-    function addSavedPhoto(src, name) {
-      let photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
-      photos.push({
+    async function addSavedPhoto(src, name) {
+      const photoItem = {
         id: 'photo-' + Date.now(),
         name: name,
         src: src
-      });
-      localStorage.setItem('poster_saved_photos', JSON.stringify(photos));
-      renderSavedPhotos();
+      };
+      try {
+        await addToStore('photos', photoItem);
+      } catch (e) {
+        console.error(e);
+        let photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
+        photos.push(photoItem);
+        try {
+          localStorage.setItem('poster_saved_photos', JSON.stringify(photos));
+        } catch (err) {
+          alert("Storage full! Please delete some old photos to upload new ones.");
+        }
+      }
+      await renderSavedPhotos();
     }
 
-    function renderSavedPhotos() {
+    async function renderSavedPhotos() {
       const container = document.getElementById('saved-photos-grid');
       if (!container) return;
       container.innerHTML = '';
 
-      let photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
+      let photos = [];
+      try {
+        photos = await getAllFromStore('photos');
+      } catch (e) {
+        console.error(e);
+        photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
+      }
+
       if (photos.length === 0) {
         container.innerHTML = '<div class="help-text" style="grid-column: 1/-1; text-align: center;">No uploaded photos yet.</div>';
         return;
@@ -3718,11 +3805,37 @@
       });
     }
 
-    function deleteSavedPhoto(id) {
-      let photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
-      photos = photos.filter(p => p.id !== id);
-      localStorage.setItem('poster_saved_photos', JSON.stringify(photos));
-      renderSavedPhotos();
+    async function deleteSavedPhoto(id) {
+      let photoSrc = '';
+      try {
+        const photos = await getAllFromStore('photos');
+        const photo = photos.find(p => p.id === id);
+        if (photo) photoSrc = photo.src;
+        await deleteFromStore('photos', id);
+      } catch (e) {
+        console.error(e);
+        let photos = JSON.parse(localStorage.getItem('poster_saved_photos')) || [];
+        const photo = photos.find(p => p.id === id);
+        if (photo) photoSrc = photo.src;
+        photos = photos.filter(p => p.id !== id);
+        localStorage.setItem('poster_saved_photos', JSON.stringify(photos));
+      }
+
+      // Purge from all pages if found
+      if (photoSrc) {
+        state.pages.forEach(page => {
+          page.elements = page.elements.filter(el => el.src !== photoSrc);
+        });
+        const activeObj = getActiveElement();
+        if (activeObj && activeObj.el.src === photoSrc) {
+          state.activeElementId = null;
+          state.selectedElementIds = [];
+        }
+      }
+
+      await renderSavedPhotos();
+      updatePreview();
+      syncSidebarInputs();
     }
 
     function addPhotoToCanvas(src, name) {
@@ -3827,7 +3940,7 @@
       });
     }
 
-    function saveTemplate() {
+    async function saveTemplate() {
       const name = prompt("Enter template name:", `Template ${new Date().toLocaleDateString()}`);
       if (!name) return;
 
@@ -3836,25 +3949,44 @@
         pages: JSON.parse(JSON.stringify(state.pages))
       };
 
-      let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
-      templates.push({
+      const templateItem = {
         id: 'tpl-' + Date.now(),
         name: name,
         state: templateState,
         date: new Date().toISOString()
-      });
-      localStorage.setItem('poster_templates', JSON.stringify(templates));
+      };
+
+      try {
+        await addToStore('templates', templateItem);
+        alert("Design saved successfully under Saved Templates!");
+      } catch (e) {
+        console.error(e);
+        let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+        templates.push(templateItem);
+        try {
+          localStorage.setItem('poster_templates', JSON.stringify(templates));
+          alert("Design saved successfully under Saved Templates!");
+        } catch (err) {
+          alert("Storage full! Please delete some old templates to save.");
+        }
+      }
       
-      renderSavedTemplates();
-      alert("Design saved successfully under Saved Templates!");
+      await renderSavedTemplates();
     }
 
-    function renderSavedTemplates() {
+    async function renderSavedTemplates() {
       const container = document.getElementById('saved-templates-grid');
       if (!container) return;
       container.innerHTML = '';
       
-      let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+      let templates = [];
+      try {
+        templates = await getAllFromStore('templates');
+      } catch (e) {
+        console.error(e);
+        templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+      }
+
       if (templates.length === 0) {
         container.innerHTML = '<div class="help-text" style="grid-column: 1/-1; text-align: center;">No saved templates yet.</div>';
         return;
@@ -3884,15 +4016,27 @@
       });
     }
 
-    function deleteTemplate(id) {
-      let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
-      templates = templates.filter(tpl => tpl.id !== id);
-      localStorage.setItem('poster_templates', JSON.stringify(templates));
-      renderSavedTemplates();
+    async function deleteTemplate(id) {
+      try {
+        await deleteFromStore('templates', id);
+      } catch (e) {
+        console.error(e);
+        let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+        templates = templates.filter(tpl => tpl.id !== id);
+        localStorage.setItem('poster_templates', JSON.stringify(templates));
+      }
+      await renderSavedTemplates();
     }
 
-    function loadTemplate(id) {
-      let templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+    async function loadTemplate(id) {
+      let templates = [];
+      try {
+        templates = await getAllFromStore('templates');
+      } catch (e) {
+        console.error(e);
+        templates = JSON.parse(localStorage.getItem('poster_templates')) || [];
+      }
+
       const tpl = templates.find(tpl => tpl.id === id);
       if (!tpl) return;
       
@@ -4417,7 +4561,14 @@
       const zone = document.getElementById(zoneId);
       const input = document.getElementById(inputId);
 
-      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('click', (e) => {
+        if (e.target === input) return;
+        input.click();
+      });
+
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
 
       zone.addEventListener('dragover', (e) => {
         e.preventDefault();
