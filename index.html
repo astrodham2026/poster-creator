@@ -2948,7 +2948,7 @@
             elDiv.style.overflow = (el.isAutoHeight !== false) ? 'visible' : 'hidden';
           } else if (el.type === 'html') {
             elDiv.style.height = el.isAutoHeight ? 'auto' : `${el.height}px`;
-            elDiv.style.overflow = el.isAutoHeight ? 'visible' : 'hidden';
+            elDiv.style.overflow = el.isAutoHeight ? 'visible' : 'auto';
           } else {
             elDiv.style.height = el.isAutoHeight ? 'auto' : `${el.height}px`;
           }
@@ -6331,7 +6331,7 @@
           const hasHeader = tableHeaderCheck.checked;
           const hasTitle = tableTitleCheck ? tableTitleCheck.checked : false;
 
-          let tableHtml = '<table style="width: 100%; border-collapse: collapse;">\n';
+          let tableHtml = '<table style="width: 100%; border-collapse: collapse; table-layout: fixed;">\n';
           
           if (hasTitle || hasHeader) {
             tableHtml += '  <thead>\n';
@@ -6371,7 +6371,7 @@
             isAutoHeight: true,
             rotation: 0,
             opacity: 100,
-            fontSize: 16,
+            fontSize: 12,
             color: '#212529',
             zIndex: page.elements.length + 5
           };
