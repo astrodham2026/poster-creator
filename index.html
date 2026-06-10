@@ -364,6 +364,12 @@
     }
 
     /* HTML Render Node Default Table & Toolbar Styles */
+    .html-render-node {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+    }
     .html-render-node table {
       border-collapse: collapse;
       width: 100%;
@@ -1710,10 +1716,16 @@
                 <input type="number" id="table-cols" class="form-input" min="1" max="20" value="3">
               </div>
             </div>
+            <div class="control-group" style="margin-bottom: 8px;">
+              <label class="switch-wrapper">
+                <input type="checkbox" id="table-title-enable" checked>
+                <span class="switch-label" style="text-transform: none;">Include Merged Headline (Title Row)</span>
+              </label>
+            </div>
             <div class="control-group" style="margin-bottom: 12px;">
               <label class="switch-wrapper">
                 <input type="checkbox" id="table-header-enable" checked>
-                <span class="switch-label" style="text-transform: none;">Include Headline (Header Row)</span>
+                <span class="switch-label" style="text-transform: none;">Include Column Headers</span>
               </label>
             </div>
             <button type="button" class="btn btn-accent btn-sm w-full" id="btn-insert-table">
@@ -1804,6 +1816,117 @@
                 <button type="button" class="btn btn-secondary btn-sm btn-danger" id="btn-html-del-row">- Delete Row</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-html-add-col">+ Add Column</button>
                 <button type="button" class="btn btn-secondary btn-sm btn-danger" id="btn-html-del-col">- Delete Column</button>
+              </div>
+            </div>
+
+            <!-- Table Styling Panel -->
+            <div id="html-table-styling-container" style="display: none; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
+              <label style="font-weight: 700; margin-bottom: 12px;">Table Custom Styling</label>
+              
+              <!-- Row Height & Column Width (Padding) -->
+              <div class="control-row" style="margin-bottom: 12px;">
+                <div class="control-group">
+                  <div class="slider-header">
+                    <label for="table-cell-padding-v" style="font-size: 10px; margin-bottom: 2px;">Row Height (Padding Y)</label>
+                    <span class="slider-value" id="table-cell-padding-v-val">10px</span>
+                  </div>
+                  <input type="range" id="table-cell-padding-v" min="2" max="50" value="10" class="form-slider">
+                </div>
+                <div class="control-group">
+                  <div class="slider-header">
+                    <label for="table-cell-padding-h" style="font-size: 10px; margin-bottom: 2px;">Col Width (Padding X)</label>
+                    <span class="slider-value" id="table-cell-padding-h-val">14px</span>
+                  </div>
+                  <input type="range" id="table-cell-padding-h" min="2" max="50" value="14" class="form-slider">
+                </div>
+              </div>
+
+              <!-- Borders -->
+              <div class="control-row" style="margin-bottom: 12px;">
+                <div class="control-group">
+                  <div class="slider-header">
+                    <label for="table-border-width" style="font-size: 10px; margin-bottom: 2px;">Border Width</label>
+                    <span class="slider-value" id="table-border-width-val">1px</span>
+                  </div>
+                  <input type="range" id="table-border-width" min="0" max="15" value="1" class="form-slider">
+                </div>
+                <div class="control-group">
+                  <label for="table-border-color" style="font-size: 10px; margin-bottom: 2px;">Border Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="table-border-color" class="color-input" value="#ced4da" style="height: 34px; width: 34px;">
+                    <input type="text" id="table-border-color-text" class="text-input text-upper" style="height: 34px; padding: 0 8px; font-size: 11px;" maxlength="7" value="#CED4DA">
+                  </div>
+                </div>
+              </div>
+
+              <div class="control-row" style="margin-bottom: 12px;">
+                <div class="control-group">
+                  <label for="table-border-style" style="font-size: 10px; margin-bottom: 4px;">Border Style</label>
+                  <select id="table-border-style" class="form-select" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+                <div class="control-group" style="display: flex; align-items: center; justify-content: center; margin-top: 14px;">
+                  <label class="switch-wrapper">
+                    <input type="checkbox" id="table-border-collapse" checked>
+                    <span class="switch-label" style="font-size: 11px;">Collapse Borders</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Header Styling -->
+              <div class="control-row" style="margin-bottom: 12px;">
+                <div class="control-group">
+                  <label for="table-header-bg" style="font-size: 10px; margin-bottom: 4px;">Header Background</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="table-header-bg" class="color-input" value="#f8f9fa" style="height: 34px; width: 34px;">
+                    <input type="text" id="table-header-bg-text" class="text-input text-upper" style="height: 34px; padding: 0 8px; font-size: 11px;" maxlength="7" value="#F8F9FA">
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label for="table-header-color" style="font-size: 10px; margin-bottom: 4px;">Header Text Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="table-header-color" class="color-input" value="#212529" style="height: 34px; width: 34px;">
+                    <input type="text" id="table-header-color-text" class="text-input text-upper" style="height: 34px; padding: 0 8px; font-size: 11px;" maxlength="7" value="#212529">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Zebra / Alternating Colors -->
+              <div class="control-group" style="margin-bottom: 10px;">
+                <label class="switch-wrapper">
+                  <input type="checkbox" id="table-zebra-enable">
+                  <span class="switch-label">Zebra Alternating Colors</span>
+                </label>
+              </div>
+
+              <!-- Zebra Colors picker row -->
+              <div class="control-row" id="table-zebra-colors-row" style="display: none; margin-bottom: 12px;">
+                <div class="control-group">
+                  <label style="font-size: 10px; margin-bottom: 4px;">Even Rows BG</label>
+                  <input type="color" id="table-bg-even" class="color-input" value="#ffffff" style="width: 100%; height: 34px;">
+                </div>
+                <div class="control-group">
+                  <label style="font-size: 10px; margin-bottom: 4px;">Odd Rows BG</label>
+                  <input type="color" id="table-bg-odd" class="color-input" value="#f2f2f2" style="width: 100%; height: 34px;">
+                </div>
+              </div>
+
+              <!-- Single background color row -->
+              <div class="control-group" id="table-single-bg-row" style="margin-bottom: 12px;">
+                <label for="table-body-bg" style="font-size: 10px; margin-bottom: 4px;">Row Background Color</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="table-body-bg" class="color-input" value="#ffffff" style="height: 34px; width: 34px;">
+                  <input type="text" id="table-body-bg-text" class="text-input text-upper" style="height: 34px; padding: 0 8px; font-size: 11px;" maxlength="7" value="#FFFFFF">
+                </div>
+              </div>
+              
+              <div class="control-group" style="margin-top: 14px;">
+                <button type="button" class="btn btn-secondary btn-sm w-full" id="btn-table-toggle-headline">Toggle Merged Title Row</button>
               </div>
             </div>
 
@@ -3143,6 +3266,157 @@
         // Table modifiers visibility
         const isTable = el.content.includes('<table') || el.content.includes('<tr');
         document.getElementById('html-table-controls').style.display = isTable ? 'block' : 'none';
+
+        // Table styling panel visibility
+        const tableStylingContainer = document.getElementById('html-table-styling-container');
+        if (tableStylingContainer) {
+          tableStylingContainer.style.display = isTable ? 'block' : 'none';
+        }
+
+        if (isTable && elDiv) {
+          const table = elDiv.querySelector('table');
+          if (table) {
+            const firstCell = table.querySelector('td, th');
+            const firstTh = table.querySelector('th');
+            
+            // 1. Padding Y & X (Cell padding)
+            if (firstCell) {
+              const style = window.getComputedStyle(firstCell);
+              const padTopVal = parseInt(style.paddingTop) || 10;
+              const padLeftVal = parseInt(style.paddingLeft) || 14;
+              
+              const pVInput = document.getElementById('table-cell-padding-v');
+              const pVVal = document.getElementById('table-cell-padding-v-val');
+              const pHInput = document.getElementById('table-cell-padding-h');
+              const pHVal = document.getElementById('table-cell-padding-h-val');
+              
+              if (pVInput) pVInput.value = padTopVal;
+              if (pVVal) pVVal.textContent = `${padTopVal}px`;
+              if (pHInput) pHInput.value = padLeftVal;
+              if (pHVal) pHVal.textContent = `${padLeftVal}px`;
+            }
+            
+            // 2. Borders width, style, color
+            if (firstCell) {
+              const style = window.getComputedStyle(firstCell);
+              const borderWVal = parseInt(style.borderTopWidth) !== undefined ? parseInt(style.borderTopWidth) : 1;
+              const borderStyle = style.borderTopStyle || 'solid';
+              
+              let borderColor = style.borderTopColor || '#ced4da';
+              if (borderColor.startsWith('rgb')) {
+                const rgb = borderColor.match(/\d+/g);
+                if (rgb && rgb.length >= 3) {
+                  const r = parseInt(rgb[0]);
+                  const g = parseInt(rgb[1]);
+                  const b = parseInt(rgb[2]);
+                  borderColor = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                }
+              }
+              
+              const bWInput = document.getElementById('table-border-width');
+              const bWVal = document.getElementById('table-border-width-val');
+              const bStyleSelect = document.getElementById('table-border-style');
+              const bColorInput = document.getElementById('table-border-color');
+              const bColorText = document.getElementById('table-border-color-text');
+              
+              if (bWInput) bWInput.value = borderWVal;
+              if (bWVal) bWVal.textContent = `${borderWVal}px`;
+              if (bStyleSelect) bStyleSelect.value = borderStyle;
+              if (bColorInput) bColorInput.value = borderColor;
+              if (bColorText) bColorText.value = borderColor.toUpperCase();
+            }
+            
+            const bCollapseCheck = document.getElementById('table-border-collapse');
+            if (bCollapseCheck) {
+              const borderCollapse = window.getComputedStyle(table).borderCollapse === 'collapse';
+              bCollapseCheck.checked = borderCollapse;
+            }
+            
+            // 3. Header background & color
+            if (firstTh) {
+              const style = window.getComputedStyle(firstTh);
+              let headerBg = style.backgroundColor || '#f8f9fa';
+              let headerCol = style.color || '#212529';
+              
+              if (headerBg.startsWith('rgb')) {
+                const rgb = headerBg.match(/\d+/g);
+                if (rgb && rgb.length >= 3) {
+                  headerBg = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                }
+              }
+              if (headerCol.startsWith('rgb')) {
+                const rgb = headerCol.match(/\d+/g);
+                if (rgb && rgb.length >= 3) {
+                  headerCol = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                }
+              }
+              
+              const hBgInput = document.getElementById('table-header-bg');
+              const hBgText = document.getElementById('table-header-bg-text');
+              const hColInput = document.getElementById('table-header-color');
+              const hColText = document.getElementById('table-header-color-text');
+              
+              if (hBgInput) hBgInput.value = headerBg;
+              if (hBgText) hBgText.value = headerBg.toUpperCase();
+              if (hColInput) hColInput.value = headerCol;
+              if (hColText) hColText.value = headerCol.toUpperCase();
+            }
+            
+            // 4. Zebra Alternating rows vs single rows
+            const trs = table.querySelectorAll('tbody tr, tr');
+            let hasZebra = false;
+            let bgEvenHex = '#ffffff';
+            let bgOddHex = '#f2f2f2';
+            let bgSingleHex = '#ffffff';
+            
+            let dataRowColors = [];
+            trs.forEach(row => {
+              const hasTh = row.querySelector('th') !== null;
+              if (!hasTh) {
+                const cells = row.querySelectorAll('td');
+                if (cells.length > 0) {
+                  let bg = window.getComputedStyle(cells[0]).backgroundColor || '#ffffff';
+                  if (bg.startsWith('rgb')) {
+                    const rgb = bg.match(/\d+/g);
+                    if (rgb && rgb.length >= 3) {
+                      bg = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                    }
+                  }
+                  dataRowColors.push(bg);
+                }
+              }
+            });
+            
+            if (dataRowColors.length >= 2) {
+              if (dataRowColors[0] !== dataRowColors[1]) {
+                hasZebra = true;
+                bgEvenHex = dataRowColors[0];
+                bgOddHex = dataRowColors[1];
+              } else {
+                bgSingleHex = dataRowColors[0];
+              }
+            } else if (dataRowColors.length === 1) {
+              bgSingleHex = dataRowColors[0];
+            }
+            
+            const zebraCheck = document.getElementById('table-zebra-enable');
+            const zebraColorsRow = document.getElementById('table-zebra-colors-row');
+            const singleBgRow = document.getElementById('table-single-bg-row');
+            const bgEvenInput = document.getElementById('table-bg-even');
+            const bgOddInput = document.getElementById('table-bg-odd');
+            const bodyBgInput = document.getElementById('table-body-bg');
+            const bodyBgText = document.getElementById('table-body-bg-text');
+            
+            if (zebraCheck) zebraCheck.checked = hasZebra;
+            if (zebraColorsRow) zebraColorsRow.style.display = hasZebra ? 'flex' : 'none';
+            if (singleBgRow) singleBgRow.style.display = hasZebra ? 'none' : 'block';
+            
+            if (bgEvenInput) bgEvenInput.value = bgEvenHex;
+            if (bgOddInput) bgOddInput.value = bgOddHex;
+            if (bodyBgInput) bodyBgInput.value = bgSingleHex;
+            if (bodyBgText) bodyBgText.value = bgSingleHex.toUpperCase();
+          }
+        }
 
         // Sync Sub-Element Font Family dropdown
         const cellFontSelect = document.getElementById('html-cell-font');
@@ -5236,6 +5510,115 @@
     // ----------------------------------------------------
     // HTML ASSET AND TABLE MODIFIER UTILITIES
     // ----------------------------------------------------
+    function updateActiveTableStyles() {
+      const activeObj = getActiveElement();
+      const el = activeObj ? activeObj.el : null;
+      if (!el || el.type !== 'html') return;
+      
+      const htmlInner = document.querySelector(`#el-${el.id} .html-render-node`);
+      if (!htmlInner) return;
+      
+      const table = htmlInner.querySelector('table');
+      if (!table) return;
+      
+      // Get settings inputs from sidebar
+      const tableCellPaddingV = document.getElementById('table-cell-padding-v');
+      const tableCellPaddingVVal = document.getElementById('table-cell-padding-v-val');
+      const tableCellPaddingH = document.getElementById('table-cell-padding-h');
+      const tableCellPaddingHVal = document.getElementById('table-cell-padding-h-val');
+      
+      const tableBorderWidth = document.getElementById('table-border-width');
+      const tableBorderWidthVal = document.getElementById('table-border-width-val');
+      const tableBorderColor = document.getElementById('table-border-color');
+      const tableBorderStyle = document.getElementById('table-border-style');
+      const tableBorderCollapse = document.getElementById('table-border-collapse');
+      
+      const tableHeaderBg = document.getElementById('table-header-bg');
+      const tableHeaderColor = document.getElementById('table-header-color');
+      
+      const tableZebraEnable = document.getElementById('table-zebra-enable');
+      const tableZebraColorsRow = document.getElementById('table-zebra-colors-row');
+      const tableBgEven = document.getElementById('table-bg-even');
+      const tableBgOdd = document.getElementById('table-bg-odd');
+      
+      const tableSingleBgRow = document.getElementById('table-single-bg-row');
+      const tableBodyBg = document.getElementById('table-body-bg');
+
+      if (!tableCellPaddingV) return; // Inputs not loaded yet
+
+      // Padding
+      const pv = tableCellPaddingV.value;
+      const ph = tableCellPaddingH.value;
+      if (tableCellPaddingVVal) tableCellPaddingVVal.textContent = `${pv}px`;
+      if (tableCellPaddingHVal) tableCellPaddingHVal.textContent = `${ph}px`;
+      
+      table.querySelectorAll('th, td').forEach(cell => {
+        cell.style.padding = `${pv}px ${ph}px`;
+      });
+      
+      // Borders
+      const bw = tableBorderWidth.value;
+      const bc = tableBorderColor.value;
+      const bs = tableBorderStyle.value;
+      if (tableBorderWidthVal) tableBorderWidthVal.textContent = `${bw}px`;
+      
+      table.style.borderCollapse = tableBorderCollapse.checked ? 'collapse' : 'separate';
+      
+      table.querySelectorAll('th, td').forEach(cell => {
+        cell.style.borderWidth = `${bw}px`;
+        cell.style.borderColor = bc;
+        cell.style.borderStyle = bs;
+      });
+      
+      // Header colors
+      const hBg = tableHeaderBg.value;
+      const hCol = tableHeaderColor.value;
+      table.querySelectorAll('th').forEach(header => {
+        header.style.backgroundColor = hBg;
+        header.style.color = hCol;
+      });
+      
+      // Zebra vs single row BG color
+      const zebra = tableZebraEnable.checked;
+      if (zebra) {
+        if (tableZebraColorsRow) tableZebraColorsRow.style.display = 'flex';
+        if (tableSingleBgRow) tableSingleBgRow.style.display = 'none';
+        const bgEven = tableBgEven.value;
+        const bgOdd = tableBgOdd.value;
+        
+        const rows = table.querySelectorAll('tr');
+        let dataRowIndex = 0;
+        rows.forEach(row => {
+          const hasTh = row.querySelector('th') !== null;
+          if (!hasTh) {
+            const bg = (dataRowIndex % 2 === 0) ? bgEven : bgOdd;
+            row.querySelectorAll('td').forEach(cell => {
+              cell.style.backgroundColor = bg;
+            });
+            dataRowIndex++;
+          }
+        });
+      } else {
+        if (tableZebraColorsRow) tableZebraColorsRow.style.display = 'none';
+        if (tableSingleBgRow) tableSingleBgRow.style.display = 'block';
+        const bgSingle = tableBodyBg.value;
+        table.querySelectorAll('tr').forEach(row => {
+          const hasTh = row.querySelector('th') !== null;
+          if (!hasTh) {
+            row.querySelectorAll('td').forEach(cell => {
+              cell.style.backgroundColor = bgSingle;
+            });
+          }
+        });
+      }
+      
+      // Sync state content
+      el.content = htmlInner.innerHTML;
+      const codeTextarea = document.getElementById('html-code-content');
+      if (codeTextarea) codeTextarea.value = el.content;
+      updatePreview();
+    }
+
     function getHtmlParserAndTable(elId) {
       const activeObj = getActiveElement();
       if (!activeObj) return null;
@@ -5252,6 +5635,7 @@
       el.content = doc.body.innerHTML;
       updatePreview();
       syncSidebarInputs();
+      updateActiveTableStyles();
     }
 
     function addTableRow(elId) {
@@ -5724,21 +6108,30 @@
       const tableRowsInput = document.getElementById('table-rows');
       const tableColsInput = document.getElementById('table-cols');
       const tableHeaderCheck = document.getElementById('table-header-enable');
+      const tableTitleCheck = document.getElementById('table-title-enable');
 
       if (insertTableBtn) {
         insertTableBtn.addEventListener('click', () => {
           const rowsCount = parseInt(tableRowsInput.value) || 3;
           const colsCount = parseInt(tableColsInput.value) || 3;
           const hasHeader = tableHeaderCheck.checked;
+          const hasTitle = tableTitleCheck ? tableTitleCheck.checked : false;
 
           let tableHtml = '<table style="width: 100%; border-collapse: collapse;">\n';
           
-          if (hasHeader) {
-            tableHtml += '  <thead>\n    <tr>\n';
-            for (let c = 1; c <= colsCount; c++) {
-              tableHtml += `      <th>Header ${c}</th>\n`;
+          if (hasTitle || hasHeader) {
+            tableHtml += '  <thead>\n';
+            if (hasTitle) {
+              tableHtml += `    <tr>\n      <th colspan="${colsCount}" style="text-align: center; font-weight: bold; font-size: 1.25em;">Table Title</th>\n    </tr>\n`;
             }
-            tableHtml += '    </tr>\n  </thead>\n';
+            if (hasHeader) {
+              tableHtml += '    <tr>\n';
+              for (let c = 1; c <= colsCount; c++) {
+                tableHtml += `      <th>Header ${c}</th>\n`;
+              }
+              tableHtml += '    </tr>\n';
+            }
+            tableHtml += '  </thead>\n';
           }
           
           tableHtml += '  <tbody>\n';
@@ -5772,6 +6165,163 @@
           page.elements.push(newEl);
           selectElement(newEl.id);
           updatePreview();
+        });
+      }
+
+      // 4. Table Custom Styling Event Bindings & Helper
+      const tableStylingContainer = document.getElementById('html-table-styling-container');
+      const tableCellPaddingV = document.getElementById('table-cell-padding-v');
+      const tableCellPaddingVVal = document.getElementById('table-cell-padding-v-val');
+      const tableCellPaddingH = document.getElementById('table-cell-padding-h');
+      const tableCellPaddingHVal = document.getElementById('table-cell-padding-h-val');
+      
+      const tableBorderWidth = document.getElementById('table-border-width');
+      const tableBorderWidthVal = document.getElementById('table-border-width-val');
+      const tableBorderColor = document.getElementById('table-border-color');
+      const tableBorderColorText = document.getElementById('table-border-color-text');
+      const tableBorderStyle = document.getElementById('table-border-style');
+      const tableBorderCollapse = document.getElementById('table-border-collapse');
+      
+      const tableHeaderBg = document.getElementById('table-header-bg');
+      const tableHeaderBgText = document.getElementById('table-header-bg-text');
+      const tableHeaderColor = document.getElementById('table-header-color');
+      const tableHeaderColorText = document.getElementById('table-header-color-text');
+      
+      const tableZebraEnable = document.getElementById('table-zebra-enable');
+      const tableZebraColorsRow = document.getElementById('table-zebra-colors-row');
+      const tableBgEven = document.getElementById('table-bg-even');
+      const tableBgOdd = document.getElementById('table-bg-odd');
+      
+      const tableSingleBgRow = document.getElementById('table-single-bg-row');
+      const tableBodyBg = document.getElementById('table-body-bg');
+      const tableBodyBgText = document.getElementById('table-body-bg-text');
+      const btnTableToggleHeadline = document.getElementById('btn-table-toggle-headline');
+
+
+
+      // Zebra toggle listener
+      if (tableZebraEnable) {
+        tableZebraEnable.addEventListener('change', () => {
+          updateActiveTableStyles();
+        });
+      }
+
+      // Input sync bindings
+      [
+        tableCellPaddingV, tableCellPaddingH,
+        tableBorderWidth, tableBorderColor, tableBorderStyle, tableBorderCollapse,
+        tableHeaderBg, tableHeaderColor,
+        tableBgEven, tableBgOdd,
+        tableBodyBg
+      ].forEach(input => {
+        if (input) {
+          input.addEventListener('input', updateActiveTableStyles);
+          input.addEventListener('change', updateActiveTableStyles);
+        }
+      });
+
+      // Text input color codes bindings
+      if (tableBorderColorText) {
+        tableBorderColorText.addEventListener('input', () => {
+          const hex = tableBorderColorText.value;
+          if (/^#[0-9A-F]{6}$/i.test(hex)) {
+            tableBorderColor.value = hex;
+            updateActiveTableStyles();
+          }
+        });
+      }
+      if (tableHeaderBgText) {
+        tableHeaderBgText.addEventListener('input', () => {
+          const hex = tableHeaderBgText.value;
+          if (/^#[0-9A-F]{6}$/i.test(hex)) {
+            tableHeaderBg.value = hex;
+            updateActiveTableStyles();
+          }
+        });
+      }
+      if (tableHeaderColorText) {
+        tableHeaderColorText.addEventListener('input', () => {
+          const hex = tableHeaderColorText.value;
+          if (/^#[0-9A-F]{6}$/i.test(hex)) {
+            tableHeaderColor.value = hex;
+            updateActiveTableStyles();
+          }
+        });
+      }
+      if (tableBodyBgText) {
+        tableBodyBgText.addEventListener('input', () => {
+          const hex = tableBodyBgText.value;
+          if (/^#[0-9A-F]{6}$/i.test(hex)) {
+            tableBodyBg.value = hex;
+            updateActiveTableStyles();
+          }
+        });
+      }
+
+      // Toggle Merged Title Row logic
+      if (btnTableToggleHeadline) {
+        btnTableToggleHeadline.addEventListener('click', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (!el || el.type !== 'html') return;
+          
+          const htmlInner = document.querySelector(`#el-${el.id} .html-render-node`);
+          if (!htmlInner) return;
+          
+          const table = htmlInner.querySelector('table');
+          if (!table) return;
+          
+          const trs = table.querySelectorAll('tr');
+          if (trs.length === 0) return;
+          
+          const firstRow = trs[0];
+          const cells = firstRow.querySelectorAll('td, th');
+          
+          let colsCount = 1;
+          for (let i = 0; i < trs.length; i++) {
+            const normalCells = trs[i].querySelectorAll('td, th');
+            if (normalCells.length > 1) {
+              let sum = 0;
+              normalCells.forEach(c => {
+                sum += parseInt(c.getAttribute('colspan') || 1);
+              });
+              colsCount = sum;
+              break;
+            }
+          }
+          if (colsCount === 1 && trs.length > 1) {
+            colsCount = trs[1] ? trs[1].querySelectorAll('td, th').length : 1;
+          }
+          
+          const isMergedTitle = cells.length === 1 && parseInt(cells[0].getAttribute('colspan') || 1) >= colsCount;
+          
+          if (isMergedTitle) {
+            firstRow.remove();
+          } else {
+            const newTr = document.createElement('tr');
+            const newTh = document.createElement('th');
+            newTh.setAttribute('colspan', colsCount);
+            newTh.style.textAlign = 'center';
+            newTh.style.fontWeight = 'bold';
+            newTh.style.fontSize = '1.25em';
+            newTh.style.padding = `${tableCellPaddingV.value}px ${tableCellPaddingH.value}px`;
+            newTh.style.borderWidth = `${tableBorderWidth.value}px`;
+            newTh.style.borderColor = tableBorderColor.value;
+            newTh.style.borderStyle = tableBorderStyle.value;
+            newTh.style.backgroundColor = tableHeaderBg.value;
+            newTh.style.color = tableHeaderColor.value;
+            newTh.textContent = 'Table Title';
+            newTr.appendChild(newTh);
+            
+            const thead = table.querySelector('thead');
+            if (thead) {
+              thead.insertBefore(newTr, thead.firstChild);
+            } else {
+              table.insertBefore(newTr, table.firstChild);
+            }
+          }
+          
+          updateActiveTableStyles();
         });
       }
     }
