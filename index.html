@@ -1538,7 +1538,7 @@
                   <div class="control-group">
                     <div class="slider-header">
                       <label for="text-font-size">Font Size</label>
-                      <span class="slider-value" id="text-font-size-val">64px</span>
+                      <span class="slider-value" id="text-font-size-val">64pt</span>
                     </div>
                     <input type="range" id="text-font-size" min="10" max="300" value="64" class="form-slider">
                   </div>
@@ -1792,7 +1792,7 @@
               <div class="control-group">
                 <div class="slider-header">
                   <label for="html-font-size">Font Size Scale</label>
-                  <span class="slider-value" id="html-font-size-val">16px</span>
+                  <span class="slider-value" id="html-font-size-val">16pt</span>
                 </div>
                 <input type="range" id="html-font-size" min="8" max="120" value="16" class="form-slider">
               </div>
@@ -2960,7 +2960,7 @@
             textInner.className = 'text-inner-node';
             textInner.textContent = el.content;
             textInner.style.fontFamily = `'${el.fontFamily}', -apple-system, sans-serif`;
-            textInner.style.fontSize = `${el.fontSize}px`;
+            textInner.style.fontSize = `${el.fontSize}pt`;
             textInner.style.fontWeight = el.fontWeight;
             textInner.style.color = el.color;
             textInner.style.textAlign = el.align;
@@ -2980,7 +2980,7 @@
             htmlInner.className = 'html-render-node';
             htmlInner.style.width = '100%';
             htmlInner.style.height = '100%';
-            htmlInner.style.fontSize = `${el.fontSize || 16}px`;
+            htmlInner.style.fontSize = `${el.fontSize || 16}pt`;
             htmlInner.style.color = el.color || '#212529';
             htmlInner.style.textAlign = 'left';
             htmlInner.style.overflow = 'visible';
@@ -3263,7 +3263,7 @@
         document.getElementById('text-content').value = el.content;
         document.getElementById('text-font-family').value = el.fontFamily;
         document.getElementById('text-font-size').value = el.fontSize;
-        document.getElementById('text-font-size-val').textContent = `${el.fontSize}px`;
+        document.getElementById('text-font-size-val').textContent = `${el.fontSize}pt`;
         document.getElementById('text-font-weight').value = el.fontWeight;
         document.getElementById('text-color').value = el.color;
         document.getElementById('text-color-text').value = el.color.toUpperCase();
@@ -3306,7 +3306,7 @@
       if (el && el.type === 'html') {
         document.getElementById('html-code-content').value = el.content;
         document.getElementById('html-font-size').value = el.fontSize || 16;
-        document.getElementById('html-font-size-val').textContent = `${el.fontSize || 16}px`;
+        document.getElementById('html-font-size-val').textContent = `${el.fontSize || 16}pt`;
         document.getElementById('html-color').value = el.color || '#212529';
         document.getElementById('html-color-text').value = (el.color || '#212529').toUpperCase();
         document.getElementById('html-width').value = el.width;
@@ -4160,7 +4160,7 @@
         const el = activeObj ? activeObj.el : null;
         if (el && el.type === 'text') {
           el.fontSize = parseInt(fontSizeInput.value) || 24;
-          fontSizeVal.textContent = `${el.fontSize}px`;
+          fontSizeVal.textContent = `${el.fontSize}pt`;
           updatePreview();
         }
       });
@@ -6111,7 +6111,7 @@
           const el = activeObj ? activeObj.el : null;
           if (el && el.type === 'html') {
             el.fontSize = parseInt(fontSize.value) || 16;
-            fontSizeVal.textContent = `${el.fontSize}px`;
+            fontSizeVal.textContent = `${el.fontSize}pt`;
             updatePreview();
           }
         });
