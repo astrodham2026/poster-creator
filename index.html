@@ -2985,6 +2985,14 @@
             htmlInner.style.overflow = 'visible';
             htmlInner.innerHTML = el.content;
             
+            if (!el.isAutoHeight) {
+              const table = htmlInner.querySelector('table');
+              if (table) table.style.height = '100%';
+            } else {
+              const table = htmlInner.querySelector('table');
+              if (table) table.style.removeProperty('height');
+            }
+            
             // Allow instant inline editing
             htmlInner.setAttribute('contenteditable', 'true');
             htmlInner.setAttribute('spellcheck', 'false');
@@ -6154,6 +6162,11 @@
           const el = activeObj ? activeObj.el : null;
           if (el && el.type === 'html') {
             el.height = parseInt(htmlHeight.value) || 200;
+            el.isAutoHeight = false;
+            const autoHeightToggle = document.getElementById('html-auto-height');
+            if (autoHeightToggle) autoHeightToggle.checked = false;
+            const heightGroup = document.getElementById('html-height-group');
+            if (heightGroup) heightGroup.style.opacity = '1';
             if (htmlHeightVal) htmlHeightVal.textContent = `${el.height}px`;
             updatePreview();
           }
