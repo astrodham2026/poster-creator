@@ -3323,7 +3323,6 @@
           htmlHeightGroup.style.display = 'block';
           htmlHeightGroup.style.opacity = el.isAutoHeight ? '0.4' : '1';
         }
-        if (htmlHeightInput) htmlHeightInput.disabled = el.isAutoHeight;
         
         document.getElementById('html-x').value = el.x;
         document.getElementById('html-y').value = el.y;
@@ -6185,7 +6184,6 @@
               heightGroup.style.display = 'block';
               heightGroup.style.opacity = htmlAutoHeight.checked ? '0.4' : '1';
             }
-            if (heightInput) heightInput.disabled = htmlAutoHeight.checked;
             updatePreview();
           }
         });
