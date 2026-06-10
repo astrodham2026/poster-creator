@@ -1520,6 +1520,19 @@
                   </div>
                   <input type="range" id="text-width" min="100" max="1080" value="800" class="form-slider">
                 </div>
+                <div class="control-group" id="text-box-height-group" style="display: none;">
+                  <div class="slider-header">
+                    <label for="text-box-height">Text Box Height</label>
+                    <span class="slider-value" id="text-box-height-val">200px</span>
+                  </div>
+                  <input type="range" id="text-box-height" min="10" max="1080" value="200" class="form-slider">
+                </div>
+                <div class="control-group">
+                  <label class="switch-wrapper">
+                    <input type="checkbox" id="text-auto-height" checked>
+                    <span class="switch-label">Auto Height</span>
+                  </label>
+                </div>
                 <div class="control-row">
                   <div class="control-group">
                     <div class="slider-header">
@@ -2129,8 +2142,39 @@
           </div>
         </div>
       </div>
+      <!-- Shared Universal Element Background Controls -->
+      <div id="universal-element-bg-controls" style="display: none; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 15px;">
+        <h3 style="font-size: 14px; margin-bottom: 12px; color: #a1a1aa;">Element Background (Box)</h3>
+        <div class="control-row">
+          <div class="control-group">
+            <label for="universal-bg-color">Box Color</label>
+            <div class="color-picker-wrapper">
+              <input type="color" id="universal-bg-color" class="color-input" value="#000000">
+              <input type="text" id="universal-bg-color-text" class="text-input text-upper" maxlength="7" value="">
+            </div>
+            <button id="universal-bg-color-clear" class="btn-secondary" style="margin-top: 5px; width: 100%; font-size: 12px;">Clear Color</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Box Background Image</label>
+          <div class="image-upload-area" id="universal-bg-image-upload" style="margin-bottom: 5px;">
+            <input type="file" id="universal-bg-image-input" accept="image/*" style="display: none;">
+            <div class="upload-preview" id="universal-bg-image-preview" style="height: 60px;"></div>
+            <span>Click to upload image</span>
+          </div>
+          <button id="universal-bg-image-clear" class="btn-secondary" style="width: 100%; font-size: 12px;">Clear Image</button>
+        </div>
+        <div class="control-group" style="margin-top: 10px;">
+          <label for="universal-bg-size">Image Size</label>
+          <select id="universal-bg-size" class="form-select">
+            <option value="cover">Cover (Fill without stretching)</option>
+            <option value="contain">Contain (Fit inside entirely)</option>
+            <option value="100% 100%">Stretch to Fill</option>
+            <option value="auto">Auto (Original size)</option>
+          </select>
+        </div>
+      </div>
     </main>
-    
   </div>
 
   <!-- ----------------------------------------------------
@@ -2462,6 +2506,7 @@
       initBackgroundSettings();
       initLogoSettings();
       initTextSettings();
+      initUniversalBgSettings();
       initExportSettings();
       initThemeSettings();
       initSignaturePad();
@@ -2887,8 +2932,17 @@
           elDiv.style.top = `${el.y}px`;
           elDiv.style.width = `${el.width}px`;
           
+          if (el.bgColor) elDiv.style.backgroundColor = el.bgColor;
+          if (el.bgImage) {
+            elDiv.style.backgroundImage = `url(${el.bgImage})`;
+            elDiv.style.backgroundSize = el.bgSize || 'cover';
+            elDiv.style.backgroundPosition = 'center';
+            elDiv.style.backgroundRepeat = 'no-repeat';
+          }
+          
           if (el.type === 'text') {
-            elDiv.style.height = 'auto';
+            elDiv.style.height = (el.isAutoHeight !== false) ? 'auto' : `${el.height || 200}px`;
+            elDiv.style.overflow = (el.isAutoHeight !== false) ? 'visible' : 'hidden';
           } else if (el.type === 'html') {
             elDiv.style.height = el.isAutoHeight ? 'auto' : `${el.height}px`;
             elDiv.style.overflow = el.isAutoHeight ? 'visible' : 'hidden';
@@ -3206,6 +3260,11 @@
         document.getElementById('text-color-text').value = el.color.toUpperCase();
         document.getElementById('text-width').value = el.width;
         document.getElementById('text-width-val').textContent = `${el.width}px`;
+        document.getElementById('text-box-height').value = el.height || 200;
+        document.getElementById('text-box-height-val').textContent = `${el.height || 200}px`;
+        document.getElementById('text-auto-height').checked = el.isAutoHeight !== false;
+        const textHeightGroup = document.getElementById('text-box-height-group');
+        if (textHeightGroup) textHeightGroup.style.display = el.isAutoHeight !== false ? 'none' : 'block';
         const currentSpacing = el.align === 'justify' ? 0 : el.spacing;
         document.getElementById('text-spacing').value = currentSpacing;
         document.getElementById('text-spacing-val').textContent = `${currentSpacing}px`;
@@ -3458,6 +3517,32 @@
       } else {
         document.getElementById('logo-empty-state').style.display = 'block';
         document.getElementById('logo-controls-container').style.display = 'none';
+      }
+
+      // Sync Universal Background Controls
+      const universalBgControls = document.getElementById('universal-element-bg-controls');
+      if (universalBgControls) {
+        if (el) {
+          universalBgControls.style.display = 'block';
+          if (el.type === 'text') {
+            document.getElementById('text-controls-container').appendChild(universalBgControls);
+          } else if (el.type === 'html') {
+            document.getElementById('html-editor-section').appendChild(universalBgControls);
+          } else if (el.type === 'logo' || el.type === 'photo' || el.type === 'signature') {
+            document.getElementById('logo-controls-container').appendChild(universalBgControls);
+          } else if (el.type === 'shape') {
+            const shapeContainer = document.getElementById('shape-controls-container');
+            if (shapeContainer) shapeContainer.appendChild(universalBgControls);
+          }
+          
+          document.getElementById('universal-bg-color').value = el.bgColor || '#000000';
+          document.getElementById('universal-bg-color-text').value = (el.bgColor || '').toUpperCase();
+          document.getElementById('universal-bg-image-preview').style.backgroundImage = el.bgImage ? `url(${el.bgImage})` : 'none';
+          document.getElementById('universal-bg-size').value = el.bgSize || 'cover';
+          document.getElementById('universal-bg-image-clear').style.display = el.bgImage ? 'block' : 'none';
+        } else {
+          universalBgControls.style.display = 'none';
+        }
       }
     }
 
@@ -3931,6 +4016,85 @@
       updatePreview();
     }
 
+    function initUniversalBgSettings() {
+      const bgColor = document.getElementById('universal-bg-color');
+      const bgColorText = document.getElementById('universal-bg-color-text');
+      const bgColorClear = document.getElementById('universal-bg-color-clear');
+      const bgImageInput = document.getElementById('universal-bg-image-input');
+      const bgImageUpload = document.getElementById('universal-bg-image-upload');
+      const bgImageClear = document.getElementById('universal-bg-image-clear');
+      const bgSize = document.getElementById('universal-bg-size');
+
+      bgColor.addEventListener('input', () => {
+        const activeObj = getActiveElement();
+        if (activeObj && activeObj.el) {
+          activeObj.el.bgColor = bgColor.value;
+          bgColorText.value = bgColor.value.toUpperCase();
+          updatePreview();
+        }
+      });
+      
+      bgColorText.addEventListener('input', () => {
+        let hex = bgColorText.value.trim();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (/^#[0-9A-F]{6}$/i.test(hex)) {
+          const activeObj = getActiveElement();
+          if (activeObj && activeObj.el) {
+            activeObj.el.bgColor = hex;
+            bgColor.value = hex;
+            updatePreview();
+          }
+        }
+      });
+
+      bgColorClear.addEventListener('click', () => {
+        const activeObj = getActiveElement();
+        if (activeObj && activeObj.el) {
+          delete activeObj.el.bgColor;
+          bgColor.value = '#000000';
+          bgColorText.value = '';
+          updatePreview();
+        }
+      });
+
+      bgImageUpload.addEventListener('click', () => bgImageInput.click());
+
+      bgImageInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const activeObj = getActiveElement();
+            if (activeObj && activeObj.el) {
+              activeObj.el.bgImage = evt.target.result;
+              document.getElementById('universal-bg-image-preview').style.backgroundImage = `url(${evt.target.result})`;
+              bgImageClear.style.display = 'block';
+              updatePreview();
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      bgImageClear.addEventListener('click', () => {
+        const activeObj = getActiveElement();
+        if (activeObj && activeObj.el) {
+          delete activeObj.el.bgImage;
+          document.getElementById('universal-bg-image-preview').style.backgroundImage = 'none';
+          bgImageClear.style.display = 'none';
+          updatePreview();
+        }
+      });
+
+      bgSize.addEventListener('change', () => {
+        const activeObj = getActiveElement();
+        if (activeObj && activeObj.el) {
+          activeObj.el.bgSize = bgSize.value;
+          updatePreview();
+        }
+      });
+    }
+
     function initTextSettings() {
       const contentInput = document.getElementById('text-content');
       const fontFamilySelect = document.getElementById('text-font-family');
@@ -3941,6 +4105,9 @@
       const colorText = document.getElementById('text-color-text');
       const widthInput = document.getElementById('text-width');
       const widthVal = document.getElementById('text-width-val');
+      const textBoxHeightInput = document.getElementById('text-box-height');
+      const textBoxHeightVal = document.getElementById('text-box-height-val');
+      const textAutoHeightInput = document.getElementById('text-auto-height');
       const spacingInput = document.getElementById('text-spacing');
       const spacingVal = document.getElementById('text-spacing-val');
       const heightInput = document.getElementById('text-height');
@@ -4026,6 +4193,29 @@
         if (el && el.type === 'text') {
           el.width = parseInt(widthInput.value) || 200;
           widthVal.textContent = `${el.width}px`;
+          updatePreview();
+        }
+      });
+
+      textBoxHeightInput.addEventListener('input', () => {
+        const activeObj = getActiveElement();
+        const el = activeObj ? activeObj.el : null;
+        if (el && el.type === 'text') {
+          el.height = parseInt(textBoxHeightInput.value) || 200;
+          textBoxHeightVal.textContent = `${el.height}px`;
+          updatePreview();
+        }
+      });
+
+      textAutoHeightInput.addEventListener('change', () => {
+        const activeObj = getActiveElement();
+        const el = activeObj ? activeObj.el : null;
+        if (el && el.type === 'text') {
+          el.isAutoHeight = textAutoHeightInput.checked;
+          const textHeightGroup = document.getElementById('text-box-height-group');
+          if (textHeightGroup) {
+            textHeightGroup.style.display = el.isAutoHeight ? 'none' : 'block';
+          }
           updatePreview();
         }
       });
@@ -6093,6 +6283,9 @@
                 const htmlInner = document.querySelector(`#el-${el.id} .html-render-node`);
                 if (htmlInner) {
                   htmlInner.style.fontFamily = `'${fontName}', sans-serif`;
+                  htmlInner.querySelectorAll('*').forEach(child => {
+                    child.style.fontFamily = `'${fontName}', sans-serif`;
+                  });
                   el.content = htmlInner.innerHTML;
                   if (codeContent) codeContent.value = el.content;
                 }
