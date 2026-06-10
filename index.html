@@ -634,6 +634,14 @@
       transition: text-shadow 0.1s ease;
       text-justify: inter-word;
     }
+    .text-inner-node[contenteditable="true"] {
+      pointer-events: auto !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      outline: none;
+    }
 
     /* Rule of Thirds guidelines */
     .grid-overlay {
@@ -4189,6 +4197,8 @@
         }
       });
 
+      let hasMoved = false;
+
       function onDragMove(moveEvent) {
         const curMouseX = moveEvent.clientX || (moveEvent.touches && moveEvent.touches[0].clientX);
         const curMouseY = moveEvent.clientY || (moveEvent.touches && moveEvent.touches[0].clientY);
@@ -4196,6 +4206,10 @@
         const deltaX = Math.round((curMouseX - startMouseX) / state.zoom);
         const deltaY = Math.round((curMouseY - startMouseY) / state.zoom);
         
+        if (deltaX !== 0 || deltaY !== 0) {
+          hasMoved = true;
+        }
+
         state.selectedElementIds.forEach(id => {
           const targetEl = page.elements.find(item => item.id === id);
           const startPos = startPositions[id];
@@ -4221,8 +4235,10 @@
         window.removeEventListener('mouseup', onDragEnd);
         window.removeEventListener('touchmove', onDragMove);
         window.removeEventListener('touchend', onDragEnd);
-        updatePreview();
-        saveHistoryState();
+        if (hasMoved) {
+          updatePreview();
+          saveHistoryState();
+        }
       }
 
       window.addEventListener('mousemove', onDragMove);
