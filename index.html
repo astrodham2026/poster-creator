@@ -1312,6 +1312,62 @@
     .context-menu-item:hover .shortcut {
       background: #e9ecef;
     }
+
+    /* Floating Textarea Search Bar */
+    .textarea-search-bar {
+      position: absolute;
+      top: 28px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(30, 30, 30, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 6px 8px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .textarea-search-bar input.search-input {
+      background: #2a2a2a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 8px;
+      width: 120px;
+      outline: none;
+    }
+    .textarea-search-bar input.search-input:focus {
+      border-color: #228be6;
+    }
+    .textarea-search-bar .search-status {
+      font-size: 11px;
+      color: #adb5bd;
+      min-width: 40px;
+      text-align: center;
+      font-family: monospace;
+    }
+    .textarea-search-bar button.search-btn {
+      background: transparent;
+      border: none;
+      color: #adb5bd;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .textarea-search-bar button.search-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .textarea-search-bar button.search-btn svg {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -1836,7 +1892,7 @@
           <!-- Active HTML/Table Element Editor -->
           <div id="html-editor-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
             <!-- Hidden HTML Code container to keep experience clean and code-free -->
-            <div class="control-group" id="html-code-container" style="display: none;">
+            <div class="control-group" id="html-code-container">
               <label for="html-code-content">HTML Code</label>
               <textarea id="html-code-content" class="form-textarea" placeholder="HTML code..."></textarea>
               <p class="help-text">Directly edit the code above or modify text inline on the canvas.</p>
@@ -2187,6 +2243,14 @@
         <div class="zoom-display">Workspace Viewport: <span id="zoom-level">100%</span></div>
         
         <div class="toolbar-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-undo" title="Undo (Ctrl+Z)" disabled style="opacity: 0.5; cursor: not-allowed;">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+            Undo
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-redo" title="Redo (Ctrl+Y)" disabled style="opacity: 0.5; cursor: not-allowed;">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+            Redo
+          </button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-grid">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
             Show Guidelines
@@ -2391,6 +2455,241 @@
       clipboard: null
     };
 
+    // History (Undo/Redo) Management
+    const undoStack = [];
+    const redoStack = [];
+    const maxHistory = 100;
+
+    function saveHistoryState() {
+      const historyItem = {
+        canvas: JSON.parse(JSON.stringify(state.canvas)),
+        pages: JSON.parse(JSON.stringify(state.pages)),
+        activePageId: state.activePageId,
+        activeElementId: state.activeElementId,
+        selectedElementIds: [...state.selectedElementIds]
+      };
+
+      // Prevent duplicate states from being saved successively
+      if (undoStack.length > 0) {
+        const last = undoStack[undoStack.length - 1];
+        if (JSON.stringify(last.pages) === JSON.stringify(historyItem.pages) &&
+            JSON.stringify(last.canvas) === JSON.stringify(historyItem.canvas)) {
+          return;
+        }
+      }
+
+      undoStack.push(historyItem);
+      if (undoStack.length > maxHistory) {
+        undoStack.shift();
+      }
+      redoStack.length = 0; // Clear redo history on new action
+      updateUndoRedoButtons();
+    }
+
+    function undo() {
+      if (undoStack.length > 1) {
+        const current = undoStack.pop();
+        redoStack.push(current);
+        const prev = undoStack[undoStack.length - 1];
+
+        // Restore state
+        state.canvas = JSON.parse(JSON.stringify(prev.canvas));
+        state.pages = JSON.parse(JSON.stringify(prev.pages));
+        state.activePageId = prev.activePageId;
+        state.activeElementId = prev.activeElementId;
+        state.selectedElementIds = [...prev.selectedElementIds];
+
+        updatePreview();
+        updateSelectionUI();
+        syncSidebarInputs();
+        updateUndoRedoButtons();
+      }
+    }
+
+    function redo() {
+      if (redoStack.length > 0) {
+        const next = redoStack.pop();
+        undoStack.push(next);
+
+        // Restore state
+        state.canvas = JSON.parse(JSON.stringify(next.canvas));
+        state.pages = JSON.parse(JSON.stringify(next.pages));
+        state.activePageId = next.activePageId;
+        state.activeElementId = next.activeElementId;
+        state.selectedElementIds = [...next.selectedElementIds];
+
+        updatePreview();
+        updateSelectionUI();
+        syncSidebarInputs();
+        updateUndoRedoButtons();
+      }
+    }
+
+    function updateUndoRedoButtons() {
+      const undoBtn = document.getElementById('btn-undo');
+      const redoBtn = document.getElementById('btn-redo');
+
+      if (undoBtn) {
+        const canUndo = undoStack.length > 1;
+        undoBtn.disabled = !canUndo;
+        undoBtn.style.opacity = canUndo ? '1' : '0.5';
+        undoBtn.style.cursor = canUndo ? 'pointer' : 'not-allowed';
+      }
+
+      if (redoBtn) {
+        const canRedo = redoStack.length > 0;
+        redoBtn.disabled = !canRedo;
+        redoBtn.style.opacity = canRedo ? '1' : '0.5';
+        redoBtn.style.cursor = canRedo ? 'pointer' : 'not-allowed';
+      }
+    }
+
+    // Textarea Search (Ctrl+F) Helper
+    function bindTextareaSearch(textarea) {
+      if (!textarea) return;
+      let searchBar = null;
+      let matches = [];
+      let currentMatchIndex = -1;
+
+      textarea.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          showSearchBar();
+        }
+      });
+
+      function showSearchBar() {
+        if (searchBar) {
+          searchBar.querySelector('.search-input').focus();
+          return;
+        }
+
+        searchBar = document.createElement('div');
+        searchBar.className = 'textarea-search-bar';
+        searchBar.innerHTML = `
+          <input type="text" class="search-input" placeholder="Find...">
+          <span class="search-status">0/0</span>
+          <button class="search-btn prev-btn" title="Previous match">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+          <button class="search-btn next-btn" title="Next match">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <button class="search-btn close-btn" title="Close (Esc)" style="margin-left: 4px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        `;
+
+        // Position relative wrapper on parent container
+        const parent = textarea.parentNode;
+        parent.style.position = 'relative';
+        parent.appendChild(searchBar);
+
+        const input = searchBar.querySelector('.search-input');
+        const status = searchBar.querySelector('.search-status');
+        const prevBtn = searchBar.querySelector('.prev-btn');
+        const nextBtn = searchBar.querySelector('.next-btn');
+        const closeBtn = searchBar.querySelector('.close-btn');
+
+        input.focus();
+
+        function performSearch() {
+          const query = input.value;
+          if (!query) {
+            matches = [];
+            currentMatchIndex = -1;
+            status.textContent = '0/0';
+            textarea.setSelectionRange(0, 0); // clear selection highlight
+            return;
+          }
+
+          const text = textarea.value;
+          matches = [];
+          let index = 0;
+          const queryLower = query.toLowerCase();
+          const textLower = text.toLowerCase();
+
+          while ((index = textLower.indexOf(queryLower, index)) !== -1) {
+            matches.push({ start: index, end: index + query.length });
+            index += query.length;
+          }
+
+          if (matches.length > 0) {
+            if (currentMatchIndex < 0 || currentMatchIndex >= matches.length) {
+              currentMatchIndex = 0;
+            }
+            highlightMatch();
+          } else {
+            currentMatchIndex = -1;
+            status.textContent = '0/0';
+          }
+        }
+
+        function highlightMatch() {
+          if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
+            const match = matches[currentMatchIndex];
+            textarea.focus();
+            textarea.setSelectionRange(match.start, match.end);
+
+            // Scroll textarea to the selection
+            const textBefore = textarea.value.substring(0, match.start);
+            const lines = textBefore.split('\n').length;
+            const lineHeight = 18; // approximate line height in px
+            textarea.scrollTop = (lines - 2) * lineHeight;
+
+            status.textContent = `${currentMatchIndex + 1}/${matches.length}`;
+            input.focus(); // keep focus on search input
+          }
+        }
+
+        input.addEventListener('input', () => {
+          currentMatchIndex = 0;
+          performSearch();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (matches.length > 0) {
+              currentMatchIndex = (currentMatchIndex + 1) % matches.length;
+              highlightMatch();
+            }
+          } else if (e.key === 'Escape') {
+            closeSearch();
+          }
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (matches.length > 0) {
+            currentMatchIndex = (currentMatchIndex - 1 + matches.length) % matches.length;
+            highlightMatch();
+          }
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (matches.length > 0) {
+            currentMatchIndex = (currentMatchIndex + 1) % matches.length;
+            highlightMatch();
+          }
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeSearch();
+        });
+
+        function closeSearch() {
+          if (searchBar) {
+            searchBar.remove();
+            searchBar = null;
+            textarea.focus();
+          }
+        }
+      }
+    }
+
     // DOM Nodes cached
     const viewport = document.getElementById('preview-viewport');
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -2456,6 +2755,7 @@
       setActivePage(newPage.id);
       updatePreview();
       resizeWorkspace();
+      saveHistoryState();
     }
 
     function duplicatePage(pageId) {
@@ -2486,6 +2786,7 @@
       setActivePage(newPageId);
       updatePreview();
       resizeWorkspace();
+      saveHistoryState();
     }
 
     function deletePage(pageId) {
@@ -2501,6 +2802,7 @@
       
       updatePreview();
       resizeWorkspace();
+      saveHistoryState();
     }
 
     function loadState(loadedState) {
@@ -2579,6 +2881,28 @@
       initAssetUploads();
       renderPresets();
 
+      // Initialize Undo/Redo Buttons
+      const undoBtn = document.getElementById('btn-undo');
+      const redoBtn = document.getElementById('btn-redo');
+      if (undoBtn) undoBtn.addEventListener('click', () => undo());
+      if (redoBtn) redoBtn.addEventListener('click', () => redo());
+
+      // Bind search logic to textareas
+      bindTextareaSearch(document.getElementById('html-code-content'));
+      bindTextareaSearch(document.getElementById('html-asset-input'));
+
+      // Listen to changes in sidebar/floating toolbars to save history
+      document.addEventListener('change', (e) => {
+        if (e.target.closest('.sidebar') || e.target.closest('.floating-html-toolbar')) {
+          saveHistoryState();
+        }
+      });
+      document.addEventListener('blur', (e) => {
+        if (e.target.closest('.sidebar') || e.target.closest('[contenteditable="true"]') || e.target.hasAttribute('contenteditable')) {
+          saveHistoryState();
+        }
+      }, true);
+
       // 2. Initialize database and load saved items asynchronously
       initDB()
         .then(async () => {
@@ -2586,6 +2910,7 @@
           await renderSavedFonts();
           await renderSavedTemplates();
           await renderSavedPhotos();
+          saveHistoryState();
         })
         .catch(async (err) => {
           console.error("IndexedDB initialization failed, falling back to localStorage:", err);
@@ -2593,6 +2918,7 @@
           await renderSavedFonts();
           await renderSavedTemplates();
           await renderSavedPhotos();
+          saveHistoryState();
         });
 
       // Clear active selection on viewport click
@@ -2680,6 +3006,15 @@
         if (inEditable) {
           // Allow all native keyboard shortcuts inside contenteditable (Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+Y, etc.)
           return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          undo();
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+          e.preventDefault();
+          redo();
         }
 
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
@@ -3230,6 +3565,7 @@
                 const codeTextarea = document.getElementById('html-code-content');
                 if (codeTextarea) codeTextarea.value = el.content;
                 savedRange = null;
+                saveHistoryState();
               }
 
               // Font Family change
@@ -3803,6 +4139,7 @@
         window.removeEventListener('touchmove', onDragMove);
         window.removeEventListener('touchend', onDragEnd);
         updatePreview();
+        saveHistoryState();
       }
 
       window.addEventListener('mousemove', onDragMove);
@@ -3917,6 +4254,7 @@
         window.removeEventListener('mouseup', onResizeEnd);
         window.removeEventListener('touchmove', onResizeMove);
         window.removeEventListener('touchend', onResizeEnd);
+        saveHistoryState();
       }
 
       window.addEventListener('mousemove', onResizeMove);
@@ -4092,6 +4430,7 @@
           page.elements.push(newEl);
           selectElement(newEl.id);
           updatePreview();
+          saveHistoryState();
         };
         reader.readAsDataURL(file);
       });
@@ -4176,6 +4515,7 @@
       state.selectedElementIds = [];
       updatePreview();
       syncSidebarInputs();
+      saveHistoryState();
     }
 
     function alignActiveImage(alignType) {
@@ -4217,6 +4557,7 @@
       document.getElementById('logo-x').value = el.x;
       document.getElementById('logo-y').value = el.y;
       updatePreview();
+      saveHistoryState();
     }
 
     function initUniversalBgSettings() {
@@ -4590,6 +4931,7 @@
       page.elements.push(newEl);
       selectElement(newEl.id);
       updatePreview();
+      saveHistoryState();
     }
 
     function recenterActiveText() {
@@ -5728,6 +6070,7 @@
         resizeWorkspace();
         updatePreview();
         syncSidebarInputs();
+        saveHistoryState();
       }
     });
 
@@ -5850,6 +6193,10 @@
             updatePreview();
           }
           break;
+      }
+      
+      if (['cut', 'paste', 'delete', 'group', 'ungroup'].includes(action)) {
+        saveHistoryState();
       }
     }
 
@@ -6029,6 +6376,7 @@
       updatePreview();
       syncSidebarInputs();
       updateActiveTableStyles();
+      saveHistoryState();
     }
 
     function addTableRow(elId) {
@@ -6260,8 +6608,7 @@
           page.elements.push(newEl);
           selectElement(newEl.id);
           updatePreview();
-          
-          htmlInput.value = '';
+          saveHistoryState();
         });
       }
       
