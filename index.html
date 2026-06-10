@@ -2675,7 +2675,12 @@
       // Keyboard short-cuts
       window.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
-        if (document.activeElement.hasAttribute('contenteditable') || document.activeElement.closest('[contenteditable="true"]')) return;
+        // Check if we are inside any contenteditable area (direct or nested child)
+        const inEditable = document.activeElement.hasAttribute('contenteditable') || document.activeElement.closest('[contenteditable="true"]');
+        if (inEditable) {
+          // Allow all native keyboard shortcuts inside contenteditable (Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+Y, etc.)
+          return;
+        }
 
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
           e.preventDefault();
@@ -3161,12 +3166,38 @@
                 });
               });
 
+              // Save text selection whenever user interacts with toolbar controls
+              let savedRange = null;
+              function saveSelection() {
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                  const htmlNode = elDiv.querySelector('.html-render-node');
+                  if (htmlNode && htmlNode.contains(sel.anchorNode)) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                  }
+                }
+              }
+              function restoreSelection() {
+                if (savedRange) {
+                  const sel = window.getSelection();
+                  sel.removeAllRanges();
+                  sel.addRange(savedRange);
+                }
+              }
+
+              // Save selection BEFORE focus shifts to toolbar controls
+              toolbar.querySelectorAll('.ft-select, .ft-size-input, .ft-color-input, .ft-btn').forEach(ctrl => {
+                ctrl.addEventListener('mousedown', (e) => {
+                  saveSelection();
+                });
+              });
+
               // Helper: Apply style to selected text via a span wrapper
               function applyStyleToSelection(styleProp, styleVal) {
+                restoreSelection();
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
                 const range = sel.getRangeAt(0);
-                // Check if selection is inside this element
                 const htmlNode = elDiv.querySelector('.html-render-node');
                 if (!htmlNode || !htmlNode.contains(range.commonAncestorContainer)) return;
                 
@@ -3176,14 +3207,29 @@
                   range.surroundContents(span);
                 } catch(ex) {
                   // If surroundContents fails (partial selection across nodes), use execCommand fallback
+                  htmlNode.focus();
+                  restoreSelection();
                   if (styleProp === 'fontWeight') document.execCommand('bold');
                   else if (styleProp === 'fontStyle') document.execCommand('italic');
                   else if (styleProp === 'textDecoration') document.execCommand('underline');
+                  else if (styleProp === 'fontFamily') {
+                    document.execCommand('fontName', false, styleVal);
+                  } else if (styleProp === 'fontSize') {
+                    // execCommand fontSize only supports 1-7, so use span approach
+                    const wrapper = document.createElement('span');
+                    wrapper.style.fontSize = styleVal;
+                    const content = range.extractContents();
+                    wrapper.appendChild(content);
+                    range.insertNode(wrapper);
+                  } else if (styleProp === 'color') {
+                    document.execCommand('foreColor', false, styleVal);
+                  }
                 }
                 // Sync back to state
                 el.content = htmlNode.innerHTML;
                 const codeTextarea = document.getElementById('html-code-content');
                 if (codeTextarea) codeTextarea.value = el.content;
+                savedRange = null;
               }
 
               // Font Family change
