@@ -373,6 +373,7 @@
     .html-render-node table {
       border-collapse: collapse;
       width: 100%;
+      table-layout: fixed;
     }
     .html-render-node th, .html-render-node td {
       border: 1px solid #ced4da;
@@ -380,8 +381,9 @@
       text-align: left;
       word-break: break-word;
       overflow-wrap: break-word;
-      min-width: 60px;
+      white-space: normal;
       font-size: inherit;
+      vertical-align: top;
     }
     .html-render-node th {
       background-color: #f8f9fa;
