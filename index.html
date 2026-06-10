@@ -363,6 +363,60 @@
       padding: 10px 0;
     }
 
+    /* HTML Render Node Default Table & Toolbar Styles */
+    .html-render-node table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .html-render-node th, .html-render-node td {
+      border: 1px solid #ced4da;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .html-render-node th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .floating-html-toolbar {
+      position: absolute;
+      top: -42px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #212529;
+      color: #ffffff;
+      padding: 4px 6px;
+      border-radius: 6px;
+      display: flex;
+      gap: 4px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+    }
+    .floating-html-toolbar .ft-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #ffffff;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .floating-html-toolbar .ft-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .floating-html-toolbar .ft-btn.danger {
+      color: #ff8787;
+    }
+    .floating-html-toolbar .ft-btn.danger:hover {
+      background: rgba(220, 53, 69, 0.2);
+    }
+
     /* WORKSPACE & CANVAS PREVIEW (RIGHT SIDE) */
     .preview-container {
       flex: 1;
@@ -1229,12 +1283,22 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
           <span>Elements</span>
         </button>
+        <button class="tab-btn" data-tab="html" title="Custom HTML Assets & Coding">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          <span>HTML</span>
+        </button>
         <button class="tab-btn" data-tab="assets" title="Saved Templates & Uploads">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           <span>Assets</span>
         </button>
         <button class="tab-btn" data-tab="theme" title="Dynamic Fonts & Styling">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22C17.52 22 22 17.52 22 12S17.52 2 12 2 2 6.52 2 12c0 2.78 1.13 5.3 2.96 7.12.18.18.22.46.12.7A3.33 3.33 0 0 0 8 22h4Z"></path>
+            <circle cx="7.5" cy="10.5" r="1" fill="currentColor"></circle>
+            <circle cx="11.5" cy="7.5" r="1" fill="currentColor"></circle>
+            <circle cx="16.5" cy="9.5" r="1" fill="currentColor"></circle>
+            <circle cx="15.5" cy="14.5" r="1" fill="currentColor"></circle>
+          </svg>
           <span>Theme</span>
         </button>
         <button class="tab-btn" data-tab="export" title="Render & Download Options">
@@ -1609,7 +1673,133 @@
           </div>
 
         </section>
-        
+
+        <!-- PANEL: HTML -->
+        <section class="tab-panel" id="panel-html">
+          <!-- Create HTML Asset Section -->
+          <div class="control-group">
+            <label>Create HTML Asset</label>
+            <div style="display: flex; gap: 8px; flex-direction: column;">
+              <textarea id="html-asset-input" class="form-textarea" placeholder="Paste HTML code here (e.g. &lt;table border=&quot;1&quot;&gt;...)"></textarea>
+              <button type="button" class="btn btn-accent btn-sm w-full" id="btn-add-html-asset">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                Add HTML to Canvas
+              </button>
+            </div>
+          </div>
+
+          <!-- Active HTML Element Editor -->
+          <div id="html-editor-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+            <div class="control-group">
+              <label for="html-code-content">HTML Code</label>
+              <textarea id="html-code-content" class="form-textarea" placeholder="HTML code..."></textarea>
+              <p class="help-text">Directly edit the code above or modify text inline on the canvas.</p>
+            </div>
+            
+            <div class="control-row">
+              <div class="control-group">
+                <div class="slider-header">
+                  <label for="html-font-size">Font Size Scale</label>
+                  <span class="slider-value" id="html-font-size-val">16px</span>
+                </div>
+                <input type="range" id="html-font-size" min="8" max="120" value="16" class="form-slider">
+              </div>
+              <div class="control-group">
+                <label for="html-color">Default Text Color</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="html-color" class="color-input" value="#212529">
+                  <input type="text" id="html-color-text" class="text-input text-upper" maxlength="7" value="#212529">
+                </div>
+              </div>
+            </div>
+
+            <!-- Targeted Cell/Text Font Styling -->
+            <div class="control-group">
+              <label for="html-cell-font">Sub-Element Font Family</label>
+              <select id="html-cell-font" class="form-select">
+                <option value="" disabled selected>Select Font for Focused Cell</option>
+                <option value="Montserrat" style="font-family: 'Montserrat', sans-serif;">Montserrat</option>
+                <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter</option>
+                <option value="Poppins" style="font-family: 'Poppins', sans-serif;">Poppins</option>
+                <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair Display</option>
+                <option value="Merriweather" style="font-family: 'Merriweather', serif;">Merriweather</option>
+                <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
+                <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
+                <option value="Impact" style="font-family: Impact, sans-serif;">Impact</option>
+                <option value="Courier New" style="font-family: 'Courier New', monospace;">Courier</option>
+              </select>
+              <p class="help-text">Click inside a table cell or text element on the canvas, then select a font to apply it.</p>
+            </div>
+
+            <div class="control-group" id="html-table-controls" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
+              <label>Table Modifiers</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-html-add-row">+ Add Row</button>
+                <button type="button" class="btn btn-secondary btn-sm btn-danger" id="btn-html-del-row">- Delete Row</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-html-add-col">+ Add Column</button>
+                <button type="button" class="btn btn-secondary btn-sm btn-danger" id="btn-html-del-col">- Delete Column</button>
+              </div>
+            </div>
+
+            <div class="control-group" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
+              <div class="slider-header">
+                <label for="html-width">Element Width</label>
+                <span class="slider-value" id="html-width-val">400px</span>
+              </div>
+              <input type="range" id="html-width" min="50" max="1080" value="400" class="form-slider">
+            </div>
+            <div class="control-group" id="html-height-group">
+              <div class="slider-header">
+                <label for="html-height">Element Height</label>
+                <span class="slider-value" id="html-height-val">200px</span>
+              </div>
+              <input type="range" id="html-height" min="10" max="1080" value="200" class="form-slider">
+            </div>
+            <div class="control-group">
+              <label class="switch-wrapper">
+                <input type="checkbox" id="html-auto-height" checked>
+                <span class="switch-label">Auto Height</span>
+              </label>
+            </div>
+            
+            <div class="control-row">
+              <div class="control-group">
+                <label for="html-x">Position X</label>
+                <input type="number" id="html-x" class="form-input">
+              </div>
+              <div class="control-group">
+                <label for="html-y">Position Y</label>
+                <input type="number" id="html-y" class="form-input">
+              </div>
+            </div>
+            
+            <div class="control-row">
+              <div class="control-group">
+                <div class="slider-header">
+                  <label for="html-rotation">Angle Rotation</label>
+                  <span class="slider-value" id="html-rotation-val">0°</span>
+                </div>
+                <input type="range" id="html-rotation" min="-180" max="180" value="0" class="form-slider">
+              </div>
+              <div class="control-group">
+                <div class="slider-header">
+                  <label for="html-opacity">Opacity</label>
+                  <span class="slider-value" id="html-opacity-val">100%</span>
+                </div>
+                <input type="range" id="html-opacity" min="0" max="100" value="100" class="form-slider">
+              </div>
+            </div>
+
+            <div class="control-group mt-3">
+              <button type="button" class="btn btn-danger w-full" id="btn-delete-html-element">Delete Asset</button>
+            </div>
+          </div>
+          
+          <div id="html-empty-state" style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+            Select an HTML element on the canvas to configure and edit it.
+          </div>
+        </section>
+
         <!-- PANEL: ASSETS -->
         <section class="tab-panel" id="panel-assets">
           <div class="control-group">
@@ -2120,6 +2310,7 @@
       initExportSettings();
       initThemeSettings();
       initSignaturePad();
+      initHtmlSettings();
       
       initAssetUploads();
       renderPresets();
@@ -2220,6 +2411,7 @@
       // Keyboard short-cuts
       window.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+        if (document.activeElement.hasAttribute('contenteditable') || document.activeElement.closest('[contenteditable="true"]')) return;
 
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
           e.preventDefault();
@@ -2542,6 +2734,9 @@
           
           if (el.type === 'text') {
             elDiv.style.height = 'auto';
+          } else if (el.type === 'html') {
+            elDiv.style.height = el.isAutoHeight ? 'auto' : `${el.height}px`;
+            elDiv.style.overflow = el.isAutoHeight ? 'visible' : 'hidden';
           } else {
             elDiv.style.height = el.isAutoHeight ? 'auto' : `${el.height}px`;
           }
@@ -2570,6 +2765,107 @@
             }
             
             elDiv.appendChild(textInner);
+          } else if (el.type === 'html') {
+            const htmlInner = document.createElement('div');
+            htmlInner.className = 'html-render-node';
+            htmlInner.style.width = '100%';
+            htmlInner.style.height = '100%';
+            htmlInner.style.fontSize = `${el.fontSize || 16}px`;
+            htmlInner.style.color = el.color || '#212529';
+            htmlInner.style.textAlign = 'left';
+            htmlInner.style.overflow = 'visible';
+            htmlInner.innerHTML = el.content;
+            
+            // Allow inline editing via double-click to avoid blocking drag operations
+            htmlInner.setAttribute('contenteditable', 'false');
+            htmlInner.setAttribute('spellcheck', 'false');
+            
+            htmlInner.addEventListener('dblclick', (e) => {
+              htmlInner.setAttribute('contenteditable', 'true');
+              htmlInner.focus();
+            });
+            
+            // Sync user editing changes to the state
+            htmlInner.addEventListener('input', (e) => {
+              el.content = htmlInner.innerHTML;
+              if (state.activeElementId === el.id) {
+                const codeTextarea = document.getElementById('html-code-content');
+                if (codeTextarea) {
+                  codeTextarea.value = el.content;
+                }
+              }
+            });
+
+            // Track focused sub-elements for targeted font family changes
+            htmlInner.addEventListener('focusin', (e) => {
+              state.focusedSubElement = e.target;
+              
+              // Clear previous cell highlight borders
+              htmlInner.querySelectorAll('*').forEach(child => {
+                child.style.outline = 'none';
+              });
+              
+              // Highlight selected sub-element
+              if (e.target && e.target !== htmlInner) {
+                e.target.style.outline = '2px dashed #212529';
+                e.target.style.outlineOffset = '-2px';
+              }
+            });
+
+            htmlInner.addEventListener('focusout', (e) => {
+              if (e.target && e.target !== htmlInner) {
+                e.target.style.outline = 'none';
+              }
+              // Set contenteditable back to false so the block is draggable again
+              htmlInner.setAttribute('contenteditable', 'false');
+            });
+            
+            elDiv.appendChild(htmlInner);
+            
+            if (isSelected) {
+              const toolbar = document.createElement('div');
+              toolbar.className = 'floating-html-toolbar';
+              const isTable = el.content.includes('<table') || el.content.includes('<tr');
+              
+              toolbar.innerHTML = `
+                <button type="button" class="ft-btn" data-action="edit" title="Edit HTML Code">
+                  <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  Edit Code
+                </button>
+                ${isTable ? `
+                  <button type="button" class="ft-btn" data-action="add-row" title="Add Row">Row +</button>
+                  <button type="button" class="ft-btn danger" data-action="del-row" title="Delete Row">Row -</button>
+                  <button type="button" class="ft-btn" data-action="add-col" title="Add Column">Col +</button>
+                  <button type="button" class="ft-btn danger" data-action="del-col" title="Delete Column">Col -</button>
+                ` : ''}
+              `;
+              
+              ['mousedown', 'touchstart', 'click'].forEach(evtType => {
+                toolbar.addEventListener(evtType, (e) => e.stopPropagation());
+              });
+              
+              toolbar.querySelectorAll('.ft-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  const action = btn.getAttribute('data-action');
+                  if (action === 'edit') {
+                    activateTab('html');
+                    const codeTextarea = document.getElementById('html-code-content');
+                    if (codeTextarea) codeTextarea.focus();
+                  } else if (action === 'add-row') {
+                    addTableRow(el.id);
+                  } else if (action === 'del-row') {
+                    deleteTableRow(el.id);
+                  } else if (action === 'add-col') {
+                    addTableColumn(el.id);
+                  } else if (action === 'del-col') {
+                    deleteTableColumn(el.id);
+                  }
+                });
+              });
+              
+              elDiv.appendChild(toolbar);
+            }
           } else if (el.type === 'logo' || el.type === 'photo' || el.type === 'signature') {
             const img = document.createElement('img');
             img.src = el.src;
@@ -2610,6 +2906,16 @@
           
           elDiv.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('resize-handle')) return;
+            
+            // Prevent drag trigger if clicking inside contenteditable node
+            if (e.target.closest('[contenteditable="true"]')) {
+              e.stopPropagation();
+              if (!state.selectedElementIds.includes(el.id)) {
+                selectElement(el.id);
+              }
+              return;
+            }
+
             e.stopPropagation();
             
             if (e.button === 2) return;
@@ -2636,6 +2942,16 @@
           
           elDiv.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('resize-handle')) return;
+            
+            // Prevent drag trigger if clicking inside contenteditable node
+            if (e.target.closest('[contenteditable="true"]')) {
+              e.stopPropagation();
+              if (!state.selectedElementIds.includes(el.id)) {
+                selectElement(el.id);
+              }
+              return;
+            }
+
             e.stopPropagation();
             if (!state.selectedElementIds.includes(el.id)) {
               selectElement(el.id);
@@ -2682,6 +2998,8 @@
       
       if (el.type === 'text') {
         openAccordion('accordion-text');
+      } else if (el.type === 'html') {
+        activateTab('html');
       } else if (el.type === 'logo' || el.type === 'photo') {
         openAccordion('accordion-logo');
       } else if (el.type === 'signature') {
@@ -2701,7 +3019,14 @@
     function syncSidebarInputs() {
       const activeObj = getActiveElement();
       const el = activeObj ? activeObj.el : null;
-      
+          // Control HTML editor section vs empty state visibility
+      const htmlEditorSection = document.getElementById('html-editor-section');
+      const htmlEmptyState = document.getElementById('html-empty-state');
+      if (htmlEditorSection && htmlEmptyState) {
+        htmlEditorSection.style.display = (el && el.type === 'html') ? 'block' : 'none';
+        htmlEmptyState.style.display = (el && el.type === 'html') ? 'none' : 'block';
+      }
+
       // Sync Text Controls
       if (el && el.type === 'text') {
         document.getElementById('text-controls-container').style.display = 'block';
@@ -2742,6 +3067,51 @@
         document.getElementById('text-controls-container').style.display = 'none';
       }
 
+      // Sync HTML Controls
+      if (el && el.type === 'html') {
+        document.getElementById('html-code-content').value = el.content;
+        document.getElementById('html-font-size').value = el.fontSize || 16;
+        document.getElementById('html-font-size-val').textContent = `${el.fontSize || 16}px`;
+        document.getElementById('html-color').value = el.color || '#212529';
+        document.getElementById('html-color-text').value = (el.color || '#212529').toUpperCase();
+        document.getElementById('html-width').value = el.width;
+        document.getElementById('html-width-val').textContent = `${el.width}px`;
+        
+        const elDiv = document.getElementById(`el-${el.id}`);
+        const computedH = el.isAutoHeight ? (elDiv?.offsetHeight || el.width) : el.height;
+        document.getElementById('html-height').value = computedH;
+        document.getElementById('html-height-val').textContent = `${computedH}px`;
+        document.getElementById('html-auto-height').checked = el.isAutoHeight;
+        
+        if (el.isAutoHeight) {
+          document.getElementById('html-height-group').style.display = 'none';
+        } else {
+          document.getElementById('html-height-group').style.display = 'block';
+        }
+        
+        document.getElementById('html-x').value = el.x;
+        document.getElementById('html-y').value = el.y;
+        document.getElementById('html-rotation').value = el.rotation || 0;
+        document.getElementById('html-rotation-val').textContent = `${el.rotation || 0}°`;
+        document.getElementById('html-opacity').value = el.opacity !== undefined ? el.opacity : 100;
+        document.getElementById('html-opacity-val').textContent = `${el.opacity !== undefined ? el.opacity : 100}%`;
+        
+        // Table modifiers visibility
+        const isTable = el.content.includes('<table') || el.content.includes('<tr');
+        document.getElementById('html-table-controls').style.display = isTable ? 'block' : 'none';
+
+        // Sync Sub-Element Font Family dropdown
+        const cellFontSelect = document.getElementById('html-cell-font');
+        if (cellFontSelect) {
+          if (state.focusedSubElement && state.focusedSubElement.style.fontFamily) {
+            const currentFont = state.focusedSubElement.style.fontFamily.replace(/['"]/g, '');
+            cellFontSelect.value = currentFont;
+          } else {
+            cellFontSelect.value = "";
+          }
+        }
+      }
+
       // Sync Logo / Image Controls
       if (el && (el.type === 'logo' || el.type === 'photo' || el.type === 'signature')) {
         document.getElementById('logo-empty-state').style.display = 'none';
@@ -2760,7 +3130,7 @@
         } else {
           document.getElementById('logo-height-group').style.display = 'block';
         }
-
+ 
         document.getElementById('logo-x').value = el.x;
         document.getElementById('logo-y').value = el.y;
         document.getElementById('logo-rotation').value = el.rotation || 0;
@@ -2882,7 +3252,7 @@
           newY = initialY + dy;
         }
 
-        if (el.type !== 'text') {
+        if (el.type !== 'text' && el.type !== 'html') {
           if (handleType === 'tl' || handleType === 'tr' || handleType === 'bl' || handleType === 'br') {
             const scale = Math.max(0.1, newW / initialWidth);
             newW = initialWidth * scale;
@@ -2900,14 +3270,17 @@
           if (handleType === 'tl' || handleType === 'tr' || handleType === 'bl' || handleType === 'br') {
             const scale = newW / initialWidth;
             const fontScale = Math.max(0.2, scale);
-            el.fontSize = Math.round(initialFontSize * fontScale);
+            el.fontSize = Math.round((el.type === 'html' ? (el.fontSize || 16) : initialFontSize) * fontScale);
             newW = initialWidth * fontScale;
+            if (el.type === 'html') {
+              newH = initialHeight * fontScale;
+            }
             
             if (handleType === 'tl') {
               newX = initialX + (initialWidth - newW);
-              newY = initialY + (initialHeight - (initialHeight * fontScale));
+              newY = initialY + (initialHeight - (el.type === 'html' ? newH : (initialHeight * fontScale)));
             } else if (handleType === 'tr') {
-              newY = initialY + (initialHeight - (initialHeight * fontScale));
+              newY = initialY + (initialHeight - (el.type === 'html' ? newH : (initialHeight * fontScale)));
             } else if (handleType === 'bl') {
               newX = initialX + (initialWidth - newW);
             }
@@ -2916,8 +3289,15 @@
 
         el.width = Math.max(30, Math.round(newW));
         if (el.type !== 'text') {
-          el.height = Math.max(30, Math.round(newH));
-          el.isAutoHeight = false;
+          if (el.type === 'html') {
+            if (handleType.includes('t') || handleType.includes('b') || handleType === 'tl' || handleType === 'tr' || handleType === 'bl' || handleType === 'br') {
+              el.height = Math.max(30, Math.round(newH));
+              el.isAutoHeight = false;
+            }
+          } else {
+            el.height = Math.max(30, Math.round(newH));
+            el.isAutoHeight = false;
+          }
         }
         el.x = Math.round(newX);
         el.y = Math.round(newY);
@@ -4175,13 +4555,16 @@
           }
           
           const select = document.getElementById('text-font-family');
-          if (select && !select.querySelector(`option[value="${fontName}"]`)) {
-            const opt = document.createElement('option');
-            opt.value = fontName;
-            opt.textContent = fontName + " (Uploaded)";
-            opt.style.fontFamily = `'${fontName}', sans-serif`;
-            select.appendChild(opt);
-          }
+          const cellFontSelect = document.getElementById('html-cell-font');
+          [select, cellFontSelect].forEach(dropdown => {
+            if (dropdown && !dropdown.querySelector(`option[value="${fontName}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = fontName;
+              opt.textContent = fontName + " (Uploaded)";
+              opt.style.fontFamily = `'${fontName}', sans-serif`;
+              dropdown.appendChild(opt);
+            }
+          });
           
           if (select) select.value = fontName;
           const activeObj = getActiveElement();
@@ -4246,13 +4629,16 @@
           
           // Add to dropdown
           const select = document.getElementById('text-font-family');
-          if (select && !select.querySelector(`option[value="${font.id}"]`)) {
-            const opt = document.createElement('option');
-            opt.value = font.id;
-            opt.textContent = font.id + " (Uploaded)";
-            opt.style.fontFamily = `'${font.id}', sans-serif`;
-            select.appendChild(opt);
-          }
+          const cellFontSelect = document.getElementById('html-cell-font');
+          [select, cellFontSelect].forEach(dropdown => {
+            if (dropdown && !dropdown.querySelector(`option[value="${font.id}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = font.id;
+              opt.textContent = font.id + " (Uploaded)";
+              opt.style.fontFamily = `'${font.id}', sans-serif`;
+              dropdown.appendChild(opt);
+            }
+          });
         } catch (err) {
           console.error("Failed to load saved font:", font.id, err);
         }
@@ -4801,6 +5187,479 @@
       const g = parseInt(hex.slice(3, 5), 16);
       const b = parseInt(hex.slice(5, 7), 16);
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
+    // ----------------------------------------------------
+    // HTML ASSET AND TABLE MODIFIER UTILITIES
+    // ----------------------------------------------------
+    function getHtmlParserAndTable(elId) {
+      const activeObj = getActiveElement();
+      if (!activeObj) return null;
+      const el = activeObj.el;
+      if (el.id !== elId || el.type !== 'html') return null;
+      
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(el.content, 'text/html');
+      const table = doc.querySelector('table');
+      return { el, doc, table };
+    }
+
+    function serializeHtmlAndUpdate(el, doc) {
+      el.content = doc.body.innerHTML;
+      updatePreview();
+      syncSidebarInputs();
+    }
+
+    function addTableRow(elId) {
+      const res = getHtmlParserAndTable(elId);
+      if (!res || !res.table) return;
+      const { el, doc, table } = res;
+      
+      const firstRow = table.querySelector('tr');
+      const cellsCount = firstRow ? (firstRow.querySelectorAll('td, th').length || 1) : 1;
+      
+      const newRow = doc.createElement('tr');
+      for (let i = 0; i < cellsCount; i++) {
+        const newCell = doc.createElement('td');
+        newCell.textContent = 'New Cell';
+        newRow.appendChild(newCell);
+      }
+      
+      const tbody = table.querySelector('tbody');
+      if (tbody) {
+        tbody.appendChild(newRow);
+      } else {
+        table.appendChild(newRow);
+      }
+      
+      serializeHtmlAndUpdate(el, doc);
+    }
+
+    function deleteTableRow(elId) {
+      const res = getHtmlParserAndTable(elId);
+      if (!res || !res.table) return;
+      const { el, doc, table } = res;
+      
+      const rows = table.querySelectorAll('tr');
+      if (rows.length > 1) {
+        const lastRow = rows[rows.length - 1];
+        lastRow.remove();
+        serializeHtmlAndUpdate(el, doc);
+      } else {
+        alert("Cannot delete the only row remaining!");
+      }
+    }
+
+    function addTableColumn(elId) {
+      const res = getHtmlParserAndTable(elId);
+      if (!res || !res.table) return;
+      const { el, doc, table } = res;
+      
+      const rows = table.querySelectorAll('tr');
+      if (rows.length === 0) return;
+      
+      rows.forEach((row) => {
+        const isHeader = row.querySelector('th') !== null;
+        const newCell = doc.createElement(isHeader ? 'th' : 'td');
+        newCell.textContent = isHeader ? 'Header' : 'New Cell';
+        row.appendChild(newCell);
+      });
+      
+      serializeHtmlAndUpdate(el, doc);
+    }
+
+    function deleteTableColumn(elId) {
+      const res = getHtmlParserAndTable(elId);
+      if (!res || !res.table) return;
+      const { el, doc, table } = res;
+      
+      const rows = table.querySelectorAll('tr');
+      if (rows.length === 0) return;
+      
+      const firstRowCells = rows[0].querySelectorAll('td, th');
+      if (firstRowCells.length <= 1) {
+        alert("Cannot delete the only column remaining!");
+        return;
+      }
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        if (cells.length > 0) {
+          cells[cells.length - 1].remove();
+        }
+      });
+      
+      serializeHtmlAndUpdate(el, doc);
+    }
+
+    function initHtmlSettings() {
+      // 1. Assets tab upload / paste
+      const addHtmlBtn = document.getElementById('btn-add-html-asset');
+      const htmlInput = document.getElementById('html-asset-input');
+      
+      if (addHtmlBtn && htmlInput) {
+        addHtmlBtn.addEventListener('click', () => {
+          const rawCode = htmlInput.value.trim();
+          if (!rawCode) {
+            alert('Please paste some HTML code first!');
+            return;
+          }
+          
+          const page = getActivePage();
+          
+          // Parse width and height from the pasted HTML code
+          let parsedWidth = null;
+          let parsedHeight = null;
+          
+          try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(rawCode, 'text/html');
+            
+            // Find the first visual root element (skipping style or script tags)
+            let rootElement = null;
+            for (const child of doc.body.children) {
+              if (child.tagName !== 'STYLE' && child.tagName !== 'SCRIPT') {
+                rootElement = child;
+                break;
+              }
+            }
+            
+            if (rootElement) {
+              const styleWidth = rootElement.style.width;
+              const styleHeight = rootElement.style.height;
+              const attrWidth = rootElement.getAttribute('width');
+              const attrHeight = rootElement.getAttribute('height');
+              
+              if (styleWidth) {
+                const match = styleWidth.match(/^(\d+)(px)?$/);
+                if (match) parsedWidth = parseInt(match[1]);
+              } else if (attrWidth) {
+                const val = parseInt(attrWidth);
+                if (!isNaN(val)) parsedWidth = val;
+              }
+              
+              if (styleHeight) {
+                const match = styleHeight.match(/^(\d+)(px)?$/);
+                if (match) parsedHeight = parseInt(match[1]);
+              } else if (attrHeight) {
+                const val = parseInt(attrHeight);
+                if (!isNaN(val)) parsedHeight = val;
+              }
+              
+              // If not found in inline styles/attributes, look through stylesheets in the parsed snippet
+              if (!parsedWidth || !parsedHeight) {
+                const classes = Array.from(rootElement.classList);
+                const id = rootElement.id;
+                const tagName = rootElement.tagName.toLowerCase();
+                
+                for (const sheet of doc.styleSheets) {
+                  try {
+                    for (const rule of sheet.cssRules) {
+                      if (rule.type === CSSRule.STYLE_RULE) {
+                        const selector = rule.selectorText.toLowerCase();
+                        const matchesClass = classes.some(c => selector.includes('.' + c.toLowerCase()));
+                        const matchesId = id && selector.includes('#' + id.toLowerCase());
+                        const matchesTag = selector === tagName;
+                        
+                        if (matchesClass || matchesId || matchesTag) {
+                          const styleW = rule.style.width;
+                          const styleH = rule.style.height;
+                          if (styleW && !parsedWidth) {
+                            const match = styleW.match(/^(\d+)(px)?$/);
+                            if (match) parsedWidth = parseInt(match[1]);
+                          }
+                          if (styleH && !parsedHeight) {
+                            const match = styleH.match(/^(\d+)(px)?$/);
+                            if (match) parsedHeight = parseInt(match[1]);
+                          }
+                        }
+                      }
+                    }
+                  } catch (sheetErr) {
+                    // Ignore cross-origin or rule parsing issues
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error("DOMParser error parsing dimensions:", e);
+          }
+
+          let x = 100;
+          let y = 100;
+          let width = 450;
+          let height = 250;
+          let isAutoHeight = true;
+
+          if (parsedWidth) {
+            width = parsedWidth;
+          }
+          if (parsedHeight) {
+            height = parsedHeight;
+            isAutoHeight = false;
+          }
+
+          // If the parsed HTML dimensions match the active canvas page dimensions, align it to fit perfectly at (0, 0)
+          if (width === state.canvas.width) {
+            x = 0;
+          }
+          if (height === state.canvas.height) {
+            y = 0;
+          }
+
+          const newEl = {
+            id: 'html-' + Date.now(),
+            type: 'html',
+            content: rawCode,
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            isAutoHeight: isAutoHeight,
+            rotation: 0,
+            opacity: 100,
+            fontSize: 16,
+            color: '#212529',
+            zIndex: page.elements.length + 5
+          };
+          page.elements.push(newEl);
+          selectElement(newEl.id);
+          updatePreview();
+          
+          htmlInput.value = '';
+        });
+      }
+      
+      // 2. Element settings controls
+      const codeContent = document.getElementById('html-code-content');
+      const fontSize = document.getElementById('html-font-size');
+      const fontSizeVal = document.getElementById('html-font-size-val');
+      const htmlColor = document.getElementById('html-color');
+      const htmlColorText = document.getElementById('html-color-text');
+      const htmlWidth = document.getElementById('html-width');
+      const htmlWidthVal = document.getElementById('html-width-val');
+      const htmlHeight = document.getElementById('html-height');
+      const htmlHeightVal = document.getElementById('html-height-val');
+      const htmlAutoHeight = document.getElementById('html-auto-height');
+      
+      const htmlX = document.getElementById('html-x');
+      const htmlY = document.getElementById('html-y');
+      const htmlRotation = document.getElementById('html-rotation');
+      const htmlRotationVal = document.getElementById('html-rotation-val');
+      const htmlOpacity = document.getElementById('html-opacity');
+      const htmlOpacityVal = document.getElementById('html-opacity-val');
+      
+      if (codeContent) {
+        codeContent.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.content = codeContent.value;
+            const isTable = el.content.includes('<table') || el.content.includes('<tr');
+            const tableControls = document.getElementById('html-table-controls');
+            if (tableControls) tableControls.style.display = isTable ? 'block' : 'none';
+            updatePreview();
+          }
+        });
+      }
+      
+      if (fontSize) {
+        fontSize.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.fontSize = parseInt(fontSize.value) || 16;
+            fontSizeVal.textContent = `${el.fontSize}px`;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlColor) {
+        htmlColor.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.color = htmlColor.value;
+            if (htmlColorText) htmlColorText.value = htmlColor.value.toUpperCase();
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlColorText) {
+        htmlColorText.addEventListener('input', () => {
+          const hex = htmlColorText.value;
+          if (/^#[0-9A-F]{6}$/i.test(hex)) {
+            const activeObj = getActiveElement();
+            const el = activeObj ? activeObj.el : null;
+            if (el && el.type === 'html') {
+              el.color = hex;
+              if (htmlColor) htmlColor.value = hex;
+              updatePreview();
+            }
+          }
+        });
+      }
+      
+      if (htmlWidth) {
+        htmlWidth.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.width = parseInt(htmlWidth.value) || 400;
+            if (htmlWidthVal) htmlWidthVal.textContent = `${el.width}px`;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlHeight) {
+        htmlHeight.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.height = parseInt(htmlHeight.value) || 200;
+            if (htmlHeightVal) htmlHeightVal.textContent = `${el.height}px`;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlAutoHeight) {
+        htmlAutoHeight.addEventListener('change', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.isAutoHeight = htmlAutoHeight.checked;
+            const heightGroup = document.getElementById('html-height-group');
+            if (heightGroup) heightGroup.style.display = htmlAutoHeight.checked ? 'none' : 'block';
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlX) {
+        htmlX.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.x = parseInt(htmlX.value) || 0;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlY) {
+        htmlY.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.y = parseInt(htmlY.value) || 0;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlRotation) {
+        htmlRotation.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.rotation = parseInt(htmlRotation.value) || 0;
+            if (htmlRotationVal) htmlRotationVal.textContent = `${el.rotation}°`;
+            updatePreview();
+          }
+        });
+      }
+      
+      if (htmlOpacity) {
+        htmlOpacity.addEventListener('input', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            el.opacity = parseInt(htmlOpacity.value) || 100;
+            if (htmlOpacityVal) htmlOpacityVal.textContent = `${el.opacity}%`;
+            updatePreview();
+          }
+        });
+      }
+      
+      const addRowBtn = document.getElementById('btn-html-add-row');
+      const delRowBtn = document.getElementById('btn-html-del-row');
+      const addColBtn = document.getElementById('btn-html-add-col');
+      const delColBtn = document.getElementById('btn-html-del-col');
+      const deleteHtmlBtn = document.getElementById('btn-delete-html-element');
+      
+      if (addRowBtn) {
+        addRowBtn.addEventListener('click', () => {
+          const activeObj = getActiveElement();
+          if (activeObj && activeObj.el.type === 'html') addTableRow(activeObj.el.id);
+        });
+      }
+      if (delRowBtn) {
+        delRowBtn.addEventListener('click', () => {
+          const activeObj = getActiveElement();
+          if (activeObj && activeObj.el.type === 'html') deleteTableRow(activeObj.el.id);
+        });
+      }
+      if (addColBtn) {
+        addColBtn.addEventListener('click', () => {
+          const activeObj = getActiveElement();
+          if (activeObj && activeObj.el.type === 'html') addTableColumn(activeObj.el.id);
+        });
+      }
+      if (delColBtn) {
+        delColBtn.addEventListener('click', () => {
+          const activeObj = getActiveElement();
+          if (activeObj && activeObj.el.type === 'html') deleteTableColumn(activeObj.el.id);
+        });
+      }
+      if (deleteHtmlBtn) {
+        deleteHtmlBtn.addEventListener('click', deleteActiveElement);
+      }
+
+      // 3. Sub-Element cell font family change listener
+      const cellFont = document.getElementById('html-cell-font');
+      if (cellFont) {
+        cellFont.addEventListener('change', () => {
+          const activeObj = getActiveElement();
+          const el = activeObj ? activeObj.el : null;
+          if (el && el.type === 'html') {
+            const fontName = cellFont.value;
+            if (fontName) {
+              if (state.focusedSubElement) {
+                // Remove outline temporarily
+                state.focusedSubElement.style.outline = 'none';
+                
+                // Apply styling inline
+                state.focusedSubElement.style.fontFamily = `'${fontName}', sans-serif`;
+                
+                const htmlInner = document.querySelector(`#el-${el.id} .html-render-node`);
+                if (htmlInner) {
+                  el.content = htmlInner.innerHTML;
+                  if (codeContent) codeContent.value = el.content;
+                }
+                
+                // Restore outline
+                state.focusedSubElement.style.outline = '2px dashed #212529';
+                state.focusedSubElement.style.outlineOffset = '-2px';
+                
+                updatePreview();
+              } else {
+                el.fontFamily = fontName;
+                const htmlInner = document.querySelector(`#el-${el.id} .html-render-node`);
+                if (htmlInner) {
+                  htmlInner.style.fontFamily = `'${fontName}', sans-serif`;
+                  el.content = htmlInner.innerHTML;
+                  if (codeContent) codeContent.value = el.content;
+                }
+                updatePreview();
+              }
+            }
+          }
+        });
+      }
     }
   </script>
   <!-- Custom Right-Click Context Menu -->
