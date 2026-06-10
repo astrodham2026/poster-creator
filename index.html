@@ -3309,11 +3309,13 @@
         document.getElementById('html-height-val').textContent = `${computedH}px`;
         document.getElementById('html-auto-height').checked = el.isAutoHeight;
         
-        if (el.isAutoHeight) {
-          document.getElementById('html-height-group').style.display = 'none';
-        } else {
-          document.getElementById('html-height-group').style.display = 'block';
+        const htmlHeightGroup = document.getElementById('html-height-group');
+        const htmlHeightInput = document.getElementById('html-height');
+        if (htmlHeightGroup) {
+          htmlHeightGroup.style.display = 'block';
+          htmlHeightGroup.style.opacity = el.isAutoHeight ? '0.4' : '1';
         }
+        if (htmlHeightInput) htmlHeightInput.disabled = el.isAutoHeight;
         
         document.getElementById('html-x').value = el.x;
         document.getElementById('html-y').value = el.y;
@@ -6165,7 +6167,12 @@
           if (el && el.type === 'html') {
             el.isAutoHeight = htmlAutoHeight.checked;
             const heightGroup = document.getElementById('html-height-group');
-            if (heightGroup) heightGroup.style.display = htmlAutoHeight.checked ? 'none' : 'block';
+            const heightInput = document.getElementById('html-height');
+            if (heightGroup) {
+              heightGroup.style.display = 'block';
+              heightGroup.style.opacity = htmlAutoHeight.checked ? '0.4' : '1';
+            }
+            if (heightInput) heightInput.disabled = htmlAutoHeight.checked;
             updatePreview();
           }
         });
