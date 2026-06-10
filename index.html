@@ -3419,7 +3419,48 @@
               textInner.style.textShadow = 'none';
             }
             
+            
             elDiv.appendChild(textInner);
+
+            // Double click to edit text box inline
+            elDiv.addEventListener('dblclick', (e) => {
+              if (textInner.contentEditable === 'true') return;
+              e.stopPropagation();
+              textInner.contentEditable = 'true';
+              textInner.style.pointerEvents = 'auto';
+              textInner.focus();
+              
+              // Select all content of the text box
+              const range = document.createRange();
+              range.selectNodeContents(textInner);
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(range);
+            });
+
+            textInner.addEventListener('input', () => {
+              el.content = textInner.innerText;
+              if (state.activeElementId === el.id) {
+                const textarea = document.getElementById('text-content');
+                if (textarea) textarea.value = el.content;
+              }
+            });
+
+            textInner.addEventListener('keydown', (e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                textInner.blur();
+              }
+            });
+
+            textInner.addEventListener('blur', () => {
+              textInner.contentEditable = 'false';
+              textInner.style.pointerEvents = 'none';
+              
+              el.content = textInner.innerText;
+              updatePreview();
+              saveHistoryState();
+            });
           } else if (el.type === 'html') {
             const htmlInner = document.createElement('div');
             htmlInner.className = 'html-render-node';
