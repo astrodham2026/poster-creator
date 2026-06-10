@@ -3041,8 +3041,50 @@
           e.preventDefault();
           executeContextAction('ungroup');
         }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+          e.preventDefault();
+          executeContextAction('duplicate');
+        }
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          if (state.selectedElementIds.length > 0) {
+            e.preventDefault();
+            const page = getActivePage();
+            const amt = e.shiftKey ? 10 : 1;
+            let dx = 0;
+            let dy = 0;
+            if (e.key === 'ArrowUp') dy = -amt;
+            else if (e.key === 'ArrowDown') dy = amt;
+            else if (e.key === 'ArrowLeft') dx = -amt;
+            else if (e.key === 'ArrowRight') dx = amt;
+
+            page.elements.forEach(el => {
+              if (state.selectedElementIds.includes(el.id)) {
+                el.x = Math.round(el.x + dx);
+                el.y = Math.round(el.y + dy);
+                if (el.id === state.activeElementId) {
+                  const xInput = document.getElementById(`${el.type}-x`);
+                  const yInput = document.getElementById(`${el.type}-y`);
+                  if (xInput) xInput.value = el.x;
+                  if (yInput) yInput.value = el.y;
+                }
+              }
+            });
+            updatePreview();
+          }
+        }
         if (e.key === 'Delete' || e.key === 'Backspace') {
           executeContextAction('delete');
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          if (state.selectedElementIds.length > 0) {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+            const inEditable = document.activeElement.hasAttribute('contenteditable') || document.activeElement.closest('[contenteditable="true"]');
+            if (inEditable) return;
+            saveHistoryState();
+          }
         }
       });
 
@@ -6193,9 +6235,43 @@
             updatePreview();
           }
           break;
+
+        case 'duplicate':
+          if (state.selectedElementIds.length > 0) {
+            const offset = 24;
+            const newSelectedIds = [];
+            const elementsToDuplicate = page.elements.filter(e => state.selectedElementIds.includes(e.id));
+            if (elementsToDuplicate.length === 0) break;
+
+            const groupMap = {};
+            elementsToDuplicate.forEach(el => {
+              const cloned = JSON.parse(JSON.stringify(el));
+              cloned.id = el.type + '-' + Date.now() + '-' + Math.round(Math.random() * 1000);
+              cloned.x += offset;
+              cloned.y += offset;
+              cloned.zIndex = page.elements.length + 5;
+              
+              if (el.groupId) {
+                if (!groupMap[el.groupId]) {
+                  groupMap[el.groupId] = 'group-' + Date.now() + '-' + Math.round(Math.random() * 1000);
+                }
+                cloned.groupId = groupMap[el.groupId];
+              }
+              
+              page.elements.push(cloned);
+              newSelectedIds.push(cloned.id);
+            });
+            
+            updatePreview();
+            state.selectedElementIds = newSelectedIds;
+            state.activeElementId = newSelectedIds[0];
+            updateSelectionUI();
+            syncSidebarInputs();
+          }
+          break;
       }
       
-      if (['cut', 'paste', 'delete', 'group', 'ungroup'].includes(action)) {
+      if (['cut', 'paste', 'delete', 'group', 'ungroup', 'duplicate'].includes(action)) {
         saveHistoryState();
       }
     }
