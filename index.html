@@ -5315,42 +5315,46 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(rawCode, 'text/html');
             
-            // Find the first visual root element (skipping style or script tags)
-            let rootElement = null;
-            for (const child of doc.body.children) {
-              if (child.tagName !== 'STYLE' && child.tagName !== 'SCRIPT') {
-                rootElement = child;
-                break;
-              }
-            }
-            
-            if (rootElement) {
-              const styleWidth = rootElement.style.width;
-              const styleHeight = rootElement.style.height;
-              const attrWidth = rootElement.getAttribute('width');
-              const attrHeight = rootElement.getAttribute('height');
+            // Scan all elements in the parsed snippet to find sizing information
+            const allElements = doc.querySelectorAll('*');
+            for (const el of allElements) {
+              if (el.tagName === 'STYLE' || el.tagName === 'SCRIPT') continue;
               
-              if (styleWidth) {
-                const match = styleWidth.match(/^(\d+)(px)?$/);
-                if (match) parsedWidth = parseInt(match[1]);
-              } else if (attrWidth) {
+              let elW = null;
+              let elH = null;
+              
+              const styleWidth = el.style.width;
+              const styleHeight = el.style.height;
+              const attrWidth = el.getAttribute('width');
+              const attrHeight = el.getAttribute('height');
+              
+              // Helper to parse dimensions (supporting pixels and percentages)
+              const parseDim = (value, canvasSize) => {
+                if (!value) return null;
+                const pxMatch = value.match(/^(\d+)(px)?$/);
+                const pctMatch = value.match(/^(\d+)%$/);
+                if (pxMatch) return parseInt(pxMatch[1]);
+                if (pctMatch) return Math.round((parseInt(pctMatch[1]) / 100) * canvasSize);
+                return null;
+              };
+              
+              elW = parseDim(styleWidth, state.canvas.width);
+              if (!elW && attrWidth) {
                 const val = parseInt(attrWidth);
-                if (!isNaN(val)) parsedWidth = val;
+                if (!isNaN(val)) elW = val;
               }
               
-              if (styleHeight) {
-                const match = styleHeight.match(/^(\d+)(px)?$/);
-                if (match) parsedHeight = parseInt(match[1]);
-              } else if (attrHeight) {
+              elH = parseDim(styleHeight, state.canvas.height);
+              if (!elH && attrHeight) {
                 const val = parseInt(attrHeight);
-                if (!isNaN(val)) parsedHeight = val;
+                if (!isNaN(val)) elH = val;
               }
               
-              // If not found in inline styles/attributes, look through stylesheets in the parsed snippet
-              if (!parsedWidth || !parsedHeight) {
-                const classes = Array.from(rootElement.classList);
-                const id = rootElement.id;
-                const tagName = rootElement.tagName.toLowerCase();
+              // Check stylesheets for classes/ID of this element if not defined inline
+              if (!elW || !elH) {
+                const classes = Array.from(el.classList);
+                const id = el.id;
+                const tagName = el.tagName.toLowerCase();
                 
                 for (const sheet of doc.styleSheets) {
                   try {
@@ -5364,21 +5368,31 @@
                         if (matchesClass || matchesId || matchesTag) {
                           const styleW = rule.style.width;
                           const styleH = rule.style.height;
-                          if (styleW && !parsedWidth) {
-                            const match = styleW.match(/^(\d+)(px)?$/);
-                            if (match) parsedWidth = parseInt(match[1]);
+                          
+                          if (styleW && !elW) {
+                            elW = parseDim(styleW, state.canvas.width);
                           }
-                          if (styleH && !parsedHeight) {
-                            const match = styleH.match(/^(\d+)(px)?$/);
-                            if (match) parsedHeight = parseInt(match[1]);
+                          if (styleH && !elH) {
+                            elH = parseDim(styleH, state.canvas.height);
                           }
                         }
                       }
                     }
-                  } catch (sheetErr) {
-                    // Ignore cross-origin or rule parsing issues
-                  }
+                  } catch (e) {}
                 }
+              }
+              
+              // If we find an element matching the canvas width, prioritize it as the main container
+              if (elW === state.canvas.width) {
+                parsedWidth = elW;
+                if (elH) parsedHeight = elH;
+                break;
+              }
+              
+              // Keep the largest element dimensions found
+              if (elW && (!parsedWidth || elW > parsedWidth)) {
+                parsedWidth = elW;
+                if (elH) parsedHeight = elH;
               }
             }
           } catch (e) {
